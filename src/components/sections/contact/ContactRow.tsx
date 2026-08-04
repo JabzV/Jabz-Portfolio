@@ -17,7 +17,9 @@ type Props = {
 
 export function ContactRow({ label, value, href }: Props) {
   return (
-    <li>
+    // Phase 4: `data-reveal` target only. The trigger is the panel wrapper in
+    // Contact.tsx, so all three rows stagger together as one gesture.
+    <li data-reveal>
       <a
         href={href}
         className="group flex min-h-[44px] flex-col justify-center py-2 md:py-0"
@@ -27,7 +29,7 @@ export function ContactRow({ label, value, href }: Props) {
         </span>
         {/* The hairline. A wrapper rather than a border on the value so the line
             spans the full column while the value stays indented under it. */}
-        <span className="border-rule mt-2 block border-t pt-3">
+        <span className="border-rule mt-2 block border-t pt-2">
           {/* Design indents the value 90px past the label; 96px (pl-24) is the
               nearest scale step. Full width below md so it never overflows. */}
           <span className="text-lead font-accent text-fg-muted group-hover:text-fg block break-words uppercase transition-colors duration-200 md:pl-24">

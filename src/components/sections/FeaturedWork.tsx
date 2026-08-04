@@ -14,25 +14,46 @@ import { ProjectRow } from "./featured-work/ProjectRow";
  */
 export function FeaturedWork() {
   return (
-    <section id="work" className="shell mt-20">
-      <header>
+    // Top padding only — the section owns the full inter-section gap (180px at
+    // xl, per the design's 1663→1842 gap) and adds nothing at the bottom.
+    // `overflow-x-clip` bounds the project images' deliberate gutter overhang to
+    // the shell box so it can never produce a horizontal scrollbar.
+    <section
+      id="work"
+      aria-labelledby="work-title"
+      className="shell overflow-x-clip pt-20 sm:pt-28 lg:pt-36 xl:pt-45"
+    >
+      {/* Phase 4 reveal hooks: attributes only. The header is one trigger with
+          three staggered targets; each row below is its own trigger so a long
+          list does not fire all at once. */}
+      <header data-reveal-group>
         <div className="border-t border-rule" />
-        <h2 className="text-section-title font-display text-fg mt-16 text-center uppercase">
+        <h2
+          id="work-title"
+          data-reveal
+          className="text-section-title font-display text-fg mt-16 text-center uppercase"
+        >
           {featuredWork.title}
         </h2>
-        <p className="text-card-title font-accent text-fg-muted mt-8 uppercase">
+        <p data-reveal className="text-card-title font-accent text-fg-muted mt-8 uppercase">
           {featuredWork.subtitle}
         </p>
-        <div className="mt-4">
+        <div data-reveal className="mt-4">
           <NotchedButton href={featuredWork.cta.href} variant="light">
             {featuredWork.cta.label}
           </NotchedButton>
         </div>
       </header>
 
-      <ul className="mt-20 list-none">
+      {/* `role="list"` is explicit: `list-none` makes WebKit drop the AXList
+          role, so VoiceOver would announce neither the list nor its count. */}
+      <ul role="list" className="mt-20 list-none">
         {projects.map((project) => (
-          <li key={project.index} className="border-rule border-t last:border-b">
+          <li
+            key={project.index}
+            data-reveal-group
+            className="border-rule border-t last:border-b"
+          >
             <ProjectRow project={project} />
           </li>
         ))}

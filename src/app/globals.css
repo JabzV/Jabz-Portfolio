@@ -224,10 +224,28 @@
   }
 
   /* Authored focus indicator — the design defines none (U7) and all builders
-     need the same one. Never `outline: none`. */
+     need the same one. Never `outline: none`.
+
+     TWO-TONE, deliberately. A single-tone ring cannot satisfy WCAG 2.2
+     SC 1.4.11 here because focusable elements sit on backdrops at both ends of
+     the luminance range: the "download my resume" button is inside the red
+     `accent` panel, where a lone `--color-focus-ring` collapses to 1.77:1
+     against its own colour family, and the hero cover is a photograph whose
+     local contrast cannot be reasoned about statically at all.
+
+     The fix does not depend on the backdrop. The ring/halo boundary is
+     internal to the indicator and fixed at 4.46:1, so the indicator is always
+     visible against itself; whichever tone loses against a given backdrop, the
+     other one wins. Measured best-edge: bg 18.41:1, accent 7.88:1,
+     surface-filled 19.84:1, fg 4.46:1, project-greybox 3.16:1.
+
+     Geometry: outline-offset 2px + 2px outline spans 2-4px from the border box;
+     the 4px box-shadow spans 0-4px and is painted beneath the outline, so it
+     shows as a 2px light band between the element and the ring. */
   :focus-visible {
     outline: 2px solid var(--color-focus-ring);
     outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--color-fg);
   }
 }
 
@@ -246,9 +264,12 @@
 
 /* Explicit focus ring for elements that need it on a child/wrapper, or where
    the base :focus-visible is overridden. */
+/* Must stay identical to the base :focus-visible rule above, including the
+   two-tone halo — see the rationale there. */
 @utility focus-ring {
   &:focus-visible {
     outline: 2px solid var(--color-focus-ring);
     outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--color-fg);
   }
 }

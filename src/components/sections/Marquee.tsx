@@ -1,3 +1,4 @@
+import { MarqueeMotion } from "@/components/motion/MarqueeMotion";
 import { marqueeItems } from "@/data/site";
 
 /**
@@ -17,6 +18,12 @@ const TRACK_COPY = marqueeItems.map((phrase) => `${phrase}${SEPARATOR}`).join(""
  * Marquee — full-bleed scrolling statement band. Figma y 842–927.
  *
  * LAYOUT
+ * Top margin only — the page rule is that a section owns its leading space and
+ * never its trailing space, so the 17px below the band belongs to Intro's top
+ * padding. The design's 41px gap (hero ends 801, band top 842) is not on the 4px
+ * spacing scale, so `xl:mt-10` (40px) is used rather than an arbitrary [41px];
+ * the ramp below xl shrinks with the fluid font size.
+ *
  * No explicit height. SDDystopian's normal line box is (557 + 174) / 1000 =
  * 0.731em, which at the 116px `text-wordmark` ceiling is 84.8px — the design's
  * 85px container height is exactly this natural line box, so leaving it
@@ -25,23 +32,21 @@ const TRACK_COPY = marqueeItems.map((phrase) => `${phrase}${SEPARATOR}`).join(""
  * actually vertically clipped; the spec's "glyphs are clipped" note describes an
  * effect the metrics show does not occur.
  *
- * MOTION — Phase 4, not here.
- * `motion-engineer`: target `[data-marquee-track]`. The track holds exactly two
- * identical copies of the phrase list, so a seamless loop is
+ * MOTION — Phase 4, implemented in `<MarqueeMotion>` below.
+ * That component is a behaviour-only client leaf: it targets
+ * `[data-marquee-track]` and runs
  *   gsap.to(track, { xPercent: -50, ease: "none", repeat: -1, duration })
- * with `duration = track.scrollWidth / 2 / 173.1`, MEASURED at runtime after the
- * font loads. 173.1 px/s is the one durable number from the Figma timeline
- * (5340px / 30.841s); the exported −5340px translate does not divide the content
- * and would visibly jump, so it is deliberately not encoded here. Nothing is
- * animated at build time and no @keyframes exist — the band renders static.
- * Reduced motion must keep it static (02-marquee.md).
+ * with `duration = track.scrollWidth / 2 / 173.1`, measured at runtime after
+ * `document.fonts.ready`. 173.1 px/s is the one durable number from the Figma
+ * timeline (5340px / 30.841s); the exported −5340px translate does not divide
+ * the content and would visibly jump, so it is deliberately not encoded.
+ * This section itself stays a Server Component and renders the band static —
+ * no transform, no @keyframes — so it is readable without JS and under
+ * `prefers-reduced-motion: reduce`, where the tween is never built (02-marquee.md).
  */
 export function Marquee() {
   return (
-    <section
-      aria-label="Personal statement marquee"
-      className="w-full overflow-clip"
-    >
+    <section className="mt-6 w-full overflow-clip sm:mt-8 lg:mt-9 xl:mt-10">
       <div
         data-marquee-track
         className="text-wordmark font-display text-display text-shadow-display flex w-max flex-nowrap"
@@ -53,6 +58,7 @@ export function Marquee() {
           {TRACK_COPY}
         </span>
       </div>
+      <MarqueeMotion />
     </section>
   );
 }

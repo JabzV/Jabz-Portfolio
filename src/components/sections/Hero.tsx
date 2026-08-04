@@ -1,7 +1,6 @@
 import Image from "next/image";
 
 import { BioCard } from "@/components/sections/hero/BioCard";
-import { HeroNav } from "@/components/sections/hero/HeroNav";
 import { KatakanaColumn } from "@/components/sections/hero/KatakanaColumn";
 import { LayeredWordmark } from "@/components/sections/hero/LayeredWordmark";
 import { QuoteBlock } from "@/components/sections/hero/QuoteBlock";
@@ -18,8 +17,12 @@ import { heroCopy, site, social } from "@/data/site";
  *           content, not by an absolute canvas. The cover image is pinned behind
  *           it (`inset-0`) and every remaining piece is layered decoration or a
  *           free-floating text block pinned over the cover.
- *  - `<lg`  a flex column: nav, cover image (aspect-locked), red panel, quotes,
+ *  - `<lg`  a flex column: cover image (aspect-locked), red panel, quotes,
  *           BIO card, social rail. Purely decorative layers drop out.
+ *
+ * The nav is NOT rendered here. `HeroNav` needs a `<header>` outside `<main>` to
+ * expose a `banner` landmark, so `page.tsx` mounts it as a sibling of `<main>`
+ * and it overlays this section by positioning itself.
  *
  * Horizontal design coordinates are converted to right/percentage offsets
  * wherever a 1440-based `left` would fall off a 1024px viewport; vertical
@@ -36,19 +39,25 @@ export function Hero() {
       aria-labelledby="hero-headline"
       className="bg-bg relative flex w-full flex-col gap-10 overflow-hidden pb-16 lg:block lg:gap-0 lg:pb-0"
     >
-      <HeroNav />
-
       {/* Plane 1 — cover image, and the wordmark stack that sits on top of it but
           under the red panel (the design's paint order). */}
       <div className="relative aspect-[1440/801] w-full overflow-hidden lg:absolute lg:inset-0 lg:z-0 lg:aspect-auto">
+        {/* The LCP image. `fill` rather than width/height: at lg+ this plane is
+            `absolute inset-0` and its height is pinned to the red panel, so the
+            render box (viewport x 801) never matches the intrinsic 2154x1198
+            ratio — which is exactly what triggered the dev-time
+            "width or height modified, but not the other" warning. `fill` is the
+            case that warning points at.
+            Source re-encoded PNG -> WebP: 3.90MB -> 52KB at identical
+            dimensions. The PNG mattered because public/ is served verbatim and
+            the optimizer had to decode 4MB per cold-cache variant. */}
         <Image
-          src="/assets/hero/hero-cover.png"
+          src="/assets/hero/hero-cover.webp"
           alt=""
-          width={1440}
-          height={801}
+          fill
           priority
           sizes="100vw"
-          className="h-full w-full object-cover object-center"
+          className="object-cover object-center"
         />
         <LayeredWordmark />
       </div>
@@ -112,10 +121,15 @@ export function Hero() {
           className="h-[33px] w-full max-w-[379px] object-cover lg:absolute lg:top-[669px] lg:left-[37px]"
         />
 
-        {/* `resume.href` is null (U6): a button, not an <a> with no target. */}
+        {/* `resume.href` is null (U6): a button, not an <a> with no target — and
+            `aria-disabled` plus no hover affordance, because until a résumé file
+            exists this button would otherwise promise an action it cannot do.
+            Not `disabled`: that would remove it from the tab order and hide a
+            visible design element. */}
         <button
           type="button"
-          className="text-body text-fg font-body min-h-[44px] self-start text-left whitespace-pre transition-opacity hover:opacity-70 lg:absolute lg:top-[711px] lg:left-[49px] lg:min-h-0"
+          aria-disabled="true"
+          className="text-body text-fg font-body min-h-[44px] cursor-default self-start text-left whitespace-pre lg:absolute lg:top-[711px] lg:left-[49px] lg:min-h-0"
         >
           {heroCopy.resume.label}
         </button>

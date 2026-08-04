@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 
 import { bio } from "@/data/site";
 
@@ -16,7 +15,7 @@ import { bio } from "@/data/site";
 export function BioCard() {
   return (
     <article
-      aria-labelledby="bio-heading"
+      aria-label={bio.heading}
       className="bg-fg text-fg-inverse font-body relative h-[228px] w-[265px] shrink-0"
     >
       {/* Inner hairline outline (14:8) */}
@@ -26,17 +25,22 @@ export function BioCard() {
       <div className="bg-fg-inverse absolute top-[53px] left-[13px] h-[28px] w-[163px]" />
       <p className="text-nav text-fg absolute top-[53px] left-[21px] font-semibold">{bio.name}</p>
 
-      <h2 id="bio-heading" className="text-nav absolute top-[18px] left-[23px] font-semibold">
-        {bio.heading}
-      </h2>
+      {/* Visible label only. Not a heading: this is a widget label, and an <h2>
+          here would sit in the document outline at the same level as the page's
+          section titles. The <article> carries it as its accessible name. */}
+      <p className="text-nav absolute top-[18px] left-[23px] font-semibold">{bio.heading}</p>
 
       {/* Arrow-outward chip (16:4320) + "About Me" (16:4318) as one target.
           The design draws them 24px apart at y 20 and 22; centred here (2px).
           `bio.cta.href` is null (U6 — no destination designed), so this renders
-          as a button; an <a> without href is unreachable by keyboard. */}
+          as a button; an <a> without href is unreachable by keyboard. It is also
+          `aria-disabled` with no hover affordance, so it does not advertise a
+          navigation it cannot perform. Not `disabled`: that would remove it from
+          the tab order and hide a visible design element. */}
       <button
         type="button"
-        className="absolute top-[20px] left-[161px] flex items-center transition-opacity hover:opacity-70"
+        aria-disabled="true"
+        className="absolute top-[20px] left-[161px] flex cursor-default items-center"
       >
         <span className="bg-fg grid size-6 shrink-0 place-items-center overflow-hidden">
           <Image

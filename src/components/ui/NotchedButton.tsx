@@ -23,8 +23,16 @@ const CHAMFER = "21.21px";
 const clipPath = `polygon(0 0, calc(100% - ${CHAMFER}) 0, 100% ${CHAMFER}, 100% 100%, ${CHAMFER} 100%, 0 calc(100% - ${CHAMFER}))`;
 
 const variants = {
-  accent: { fill: "bg-accent group-hover:bg-accent-soft", label: "text-fg" },
-  light: { fill: "bg-button-light group-hover:bg-fg", label: "text-fg-inverse" },
+  accent: {
+    base: "bg-accent",
+    fill: "bg-accent group-hover:bg-accent-soft",
+    label: "text-fg",
+  },
+  light: {
+    base: "bg-button-light",
+    fill: "bg-button-light group-hover:bg-fg",
+    label: "text-fg-inverse",
+  },
 } as const;
 
 type Props = {
@@ -36,6 +44,7 @@ type Props = {
 
 export function NotchedButton({ children, href, variant = "accent", className = "" }: Props) {
   const v = variants[variant];
+  const inert = !href;
 
   const classes = [
     "group relative inline-flex items-center justify-center",
@@ -50,7 +59,9 @@ export function NotchedButton({ children, href, variant = "accent", className = 
     <>
       <span
         aria-hidden="true"
-        className={`absolute inset-0 transition-colors duration-200 ${v.fill}`}
+        // An inert button keeps the base fill but drops the hover response, so
+        // it does not imply an action it cannot perform.
+        className={`absolute inset-0 transition-colors duration-200 ${inert ? v.base : v.fill}`}
         style={{ clipPath }}
       />
       <span className="relative">{children}</span>
@@ -59,9 +70,14 @@ export function NotchedButton({ children, href, variant = "accent", className = 
 
   // The design defines no link targets (U6). Until one exists, render a button
   // rather than an <a> with no href, which is unreachable by keyboard.
+  //
+  // `aria-disabled` rather than `disabled`: the button is a visible design
+  // element and must stay discoverable in the tab order, but it should not
+  // announce an action it cannot perform. `cursor-default` and the absent hover
+  // give sighted users the same signal.
   if (!href) {
     return (
-      <button type="button" className={classes}>
+      <button type="button" aria-disabled="true" className={`${classes} cursor-default`}>
         {inner}
       </button>
     );

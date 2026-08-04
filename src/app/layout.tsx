@@ -60,7 +60,27 @@ const generalSans = localFont({
 
 export const metadata: Metadata = {
   title: "Jabez Vestidas — Portfolio",
-  description: "Portfolio of Jabez Joshua Vestidas.",
+  description:
+    "Full-stack developer, designer, and engineer. Selected work, services, and experience.",
+  /**
+   * Icons live in `public/assets/` as top-level images rather than using the
+   * App Router's `src/app/icon.*` convention, so every image on the site is
+   * reachable under one predictable root.
+   */
+  icons: {
+    icon: [
+      { url: "/assets/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/assets/favicon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/assets/favicon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/assets/apple-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  openGraph: {
+    title: "Jabez Vestidas — Portfolio",
+    description:
+      "Full-stack developer, designer, and engineer. Selected work, services, and experience.",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
