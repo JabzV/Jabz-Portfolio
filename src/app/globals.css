@@ -443,21 +443,6 @@
   }
 }
 
-@keyframes boot-collapse {
-  0% {
-    clip-path: inset(0 0 0 0);
-    opacity: 1;
-  }
-  62% {
-    clip-path: inset(47% 0 47% 0);
-    opacity: 1;
-  }
-  100% {
-    clip-path: inset(50% 0 50% 0);
-    opacity: 0;
-  }
-}
-
 /* The status line snapping to its completed state. */
 @keyframes boot-complete-text {
   0% {
@@ -471,9 +456,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* No collapse or flash — just get out of the way. */
+  /* No static, no flash — just get out of the way. */
   .boot-panel[data-phase="complete"] {
     animation: boot-dismiss 0.35s linear forwards !important;
+  }
+  .boot-static,
+  .boot-roll {
+    animation: none !important;
+    opacity: 0 !important;
   }
   .boot-flash {
     animation: none !important;
@@ -481,5 +471,108 @@
   }
   .boot-complete-text {
     animation: none !important;
+  }
+}
+
+/* --- Signal lock ------------------------------------------------------------
+   The reveal reads as a receiver regaining its signal: broadcast static, a
+   rolling sync band, then the noise thinning out in stutters to leave the page
+   clear underneath. Replaces an earlier collapse-to-a-line (a set switching
+   OFF), which was the wrong direction.
+
+   The noise is a real 128px tile (public/assets/tv-static.png) rather than
+   layered gradients — gradients read as a moving texture, not noise. */
+
+/* Jump the tile to unrelated offsets on discrete steps. `steps(1, end)` on the
+   animation stops the browser interpolating between them, which would look
+   like scrolling rather than static. */
+@keyframes boot-static-jitter {
+  0% {
+    background-position: 0 0;
+  }
+  9% {
+    background-position: -37px 61px;
+  }
+  18% {
+    background-position: 83px -22px;
+  }
+  27% {
+    background-position: 19px 97px;
+  }
+  36% {
+    background-position: -71px -48px;
+  }
+  45% {
+    background-position: 104px 35px;
+  }
+  54% {
+    background-position: -13px -83px;
+  }
+  63% {
+    background-position: 57px 12px;
+  }
+  72% {
+    background-position: -94px 74px;
+  }
+  81% {
+    background-position: 41px -59px;
+  }
+  90% {
+    background-position: -25px 28px;
+  }
+  100% {
+    background-position: 68px -91px;
+  }
+}
+
+/* Brighter horizontal band sweeping down while the signal is unstable. */
+@keyframes boot-roll {
+  from {
+    transform: translateY(-140%);
+  }
+  to {
+    transform: translateY(460%);
+  }
+}
+
+/* Noise thinning out. The two upward stutters are the point — a monotonic fade
+   reads as a dissolve, not as a signal fighting to lock. */
+@keyframes boot-signal-lock {
+  0% {
+    opacity: 1;
+  }
+  30% {
+    opacity: 0.72;
+  }
+  38% {
+    opacity: 0.94;
+  }
+  58% {
+    opacity: 0.38;
+  }
+  66% {
+    opacity: 0.58;
+  }
+  84% {
+    opacity: 0.12;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Momentary vertical overscan wobble as the picture snaps in. */
+@keyframes boot-vsync {
+  0% {
+    transform: scaleY(1.05);
+  }
+  34% {
+    transform: scaleY(0.985);
+  }
+  68% {
+    transform: scaleY(1.012);
+  }
+  100% {
+    transform: scaleY(1);
   }
 }

@@ -35,10 +35,12 @@ import { useEffect, useRef, useState } from "react";
 
 /** Floor on the loading phase — only long enough to avoid a 1-frame flicker. */
 const MIN_LOADING_MS = 260;
-/** Must cover the flash + collapse keyframes below. */
-const COMPLETE_MS = 760;
+/** Length of the signal-lock reveal. Must cover boot-signal-lock. */
+const COMPLETE_MS = 1100;
 /** Cap on waiting for fonts. */
 const FONT_GUARD_MS = 2600;
+
+const STATIC_TILE = "/assets/tv-static.png";
 
 const STATUS_LINES = [
   "// ESTABLISHING UPLINK",
@@ -109,21 +111,29 @@ export function BootSequence() {
     >
       <div
         data-phase={phase}
-        className="boot-panel bg-bg absolute inset-0 grid place-items-center"
-        style={
-          complete
-            ? { animation: `boot-collapse ${COMPLETE_MS}ms cubic-bezier(.7,0,.3,1) forwards` }
-            : undefined
-        }
+        // Opaque while loading; transparent during the reveal so the page shows
+        // through as the static thins out. Keeping bg-bg here would mean fading
+        // noise against a solid panel and then cutting to the site.
+        className={`boot-panel absolute inset-0 grid place-items-center ${complete ? "" : "bg-bg"}`}
       >
         {/* Scanlines. A 3px repeat reads as a CRT and survives page zoom. */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.14]"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(to bottom, rgb(255 255 255 / 0.5) 0px, rgb(255 255 255 / 0.5) 1px, transparent 1px, transparent 3px)",
-          }}
-        />
+        {!complete && (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.14]"
+            style={{
+              backgroundImage:
+                "repeating-linear-gradient(to bottom, rgb(255 255 255 / 0.5) 0px, rgb(255 255 255 / 0.5) 1px, transparent 1px, transparent 3px)",
+            }}
+          />
+        )}
+
+        {/* Warms the noise tile into cache during loading, so the reveal never
+            waits on a network request at the moment it needs it. A preload link
+            rather than a hidden <img>: React 19 hoists it to <head>, and it
+            keeps the exact URL the CSS `url()` references — next/image would
+            rewrite it to an optimizer URL that would not match, so the fetch
+            would be wasted and the tile requested again at reveal time. */}
+        {!complete && <link rel="preload" as="image" href={STATIC_TILE} />}
 
         {/* Travelling accent band. `w-full` and an explicit `top` are
             load-bearing: for an absolutely positioned child of a grid with
@@ -136,73 +146,79 @@ export function BootSequence() {
           />
         )}
 
-        {/* Completion flash. */}
+        {/* --- Signal lock: broadcast static thinning out to reveal the page --- */}
         {complete && (
           <div
-            className="boot-flash bg-display pointer-events-none absolute inset-0"
-            style={{ animation: "boot-flash 420ms ease-out forwards" }}
-          />
+            className="boot-static pointer-events-none absolute inset-0 overflow-hidden"
+            style={{
+              animation: [
+                `boot-signal-lock ${COMPLETE_MS}ms ease-in forwards`,
+                `boot-vsync ${COMPLETE_MS}ms ease-out forwards`,
+              ].join(", "),
+            }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${STATIC_TILE})`,
+                backgroundRepeat: "repeat",
+                animation: "boot-static-jitter 700ms steps(1, end) infinite",
+              }}
+            />
+            {/* Rolling sync band. */}
+            <div
+              className="boot-roll from-display/0 via-display/25 to-display/0 absolute top-0 left-0 h-[14%] w-full bg-gradient-to-b"
+              style={{ animation: `boot-roll ${COMPLETE_MS}ms linear forwards` }}
+            />
+          </div>
         )}
 
-        {/* Width is inline rather than `w-full max-w-[560px]`: that utility pair
+        {/* Loading UI. Removed the moment the reveal starts: the signal drops to
+            static, so leaving text underneath the noise would read as a caption
+            on top of the effect rather than a receiver losing and regaining
+            picture.
+
+            Width is inline rather than `w-full max-w-[560px]`: that utility pair
             resolved to `max-width: none` here (the class was emitted into the
             markup but no rule generated for it), which stretched the column to
             the full viewport and left-aligned the text. An explicit width is
             deterministic, and the parent's `place-items-center` centres it. */}
-        <div className="relative px-6" style={{ width: "min(560px, 100%)" }}>
-          {/* Uppercased in CSS: the display face is caps-only, so lowercase
-              input would fall back per-glyph to a different family. */}
-          <div className="relative">
-            <span
-              aria-hidden="true"
-              className="text-accent font-display text-section-title-sm absolute inset-0 select-none uppercase"
-              style={
-                complete ? undefined : { animation: "boot-glitch 1.6s steps(2, end) infinite" }
-              }
-            >
-              {complete ? "Complete" : "Loading..."}
-            </span>
-            <span
-              className="text-display font-display text-section-title-sm text-shadow-display relative block uppercase"
-              style={
-                complete ? undefined : { animation: "boot-flicker 2.6s ease-in-out infinite" }
-              }
-            >
-              {complete ? "Complete" : "Loading..."}
-            </span>
-          </div>
-
-          {/* Progress rail. Snaps to full on completion. */}
-          <div className="border-rule mt-6 h-[3px] w-full border-t">
-            <div
-              className="bg-accent-soft h-[3px] origin-left"
-              style={
-                complete
-                  ? { transform: "scaleX(1)" }
-                  : { animation: "boot-progress 3.1s ease-out forwards" }
-              }
-            />
-          </div>
-
-          <div className="mt-4 flex items-center justify-between gap-4">
-            {complete ? (
-              <p
-                className="boot-complete-text text-accent-soft font-accent text-body uppercase"
-                style={{ animation: "boot-complete-text 220ms ease-out forwards" }}
+        {!complete && (
+          <div className="relative px-6" style={{ width: "min(560px, 100%)" }}>
+            {/* Uppercased in CSS: the display face is caps-only, so lowercase
+                input would fall back per-glyph to a different family. */}
+            <div className="relative">
+              <span
+                aria-hidden="true"
+                className="text-accent font-display text-section-title-sm absolute inset-0 select-none uppercase"
+                style={{ animation: "boot-glitch 1.6s steps(2, end) infinite" }}
               >
-                {"// LOAD COMPLETE"}
-              </p>
-            ) : (
+                Loading...
+              </span>
+              <span
+                className="text-display font-display text-section-title-sm text-shadow-display relative block uppercase"
+                style={{ animation: "boot-flicker 2.6s ease-in-out infinite" }}
+              >
+                Loading...
+              </span>
+            </div>
+
+            <div className="border-rule mt-6 h-[3px] w-full border-t">
+              <div
+                className="bg-accent-soft h-[3px] origin-left"
+                style={{ animation: "boot-progress 3.1s ease-out forwards" }}
+              />
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-4">
               <p className="text-fg-muted font-accent text-body uppercase">{STATUS_LINES[step]}</p>
-            )}
-            <span
-              className="bg-accent-soft inline-block h-[14px] w-[9px]"
-              style={
-                complete ? { opacity: 1 } : { animation: "boot-flicker 0.9s steps(1, end) infinite" }
-              }
-            />
+              <span
+                className="bg-accent-soft inline-block h-[14px] w-[9px]"
+                style={{ animation: "boot-flicker 0.9s steps(1, end) infinite" }}
+              />
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
