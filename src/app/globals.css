@@ -1,26 +1,226 @@
 @import "tailwindcss";
 
+/* ============================================================================
+   PORTFOLIO DESIGN FOUNDATION
+   ----------------------------------------------------------------------------
+   Source of truth: docs/design/00-overview.md (colour + type inventory)
+                    docs/design/RESPONSIVE.md  (fluid type + shell strategy)
+
+   Dark is NOT a mode. It is the only design. The Figma "Light Mode" frame is a
+   different design system that does not exist yet, so there is no
+   prefers-color-scheme block here and no light palette.
+
+   Layering: PRIMITIVES below (raw literals, never referenced by components)
+             -> SEMANTIC @theme tokens (the builder vocabulary)
+   Builders use the @theme names only. Nothing references a primitive directly.
+   ========================================================================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* --- PRIMITIVE colour literals -------------------------------------------
+     Every value traced to the Figma colour inventory. Do not use in markup. */
+  --raw-ink-900: #11141c;
+  --raw-oxblood-950: #1a0303;
+  --raw-red-700: #9c2222;
+  --raw-red-400: #c75057;
+  --raw-bone-100: #f8eeee;
+  --raw-white: #ffffff;
+  --raw-black: #000000;
+  --raw-grey-700: #4c4c4c;
+  --raw-grey-800: #363636;
+  --raw-grey-500: #8d8d8d;
+  --raw-grey-450: #868686;
+  --raw-grey-200: #e4e4e4;
+  --raw-grey-150: #d9d9d9;
+
+  /* --- PRIMITIVE fluid type steps -----------------------------------------
+     clamp() interpolated 320px -> 1440px viewport. Ceiling = the Figma value.
+     Named by their design px because primitives ARE literals; the semantic
+     layer below gives them role names. Do not use in markup. */
+
+  /* Display tier: fluid, wide range (floors 30-40px per RESPONSIVE.md) */
+  --fluid-116: clamp(40px, 18.29px + 6.79vw, 116px);
+  --fluid-112: clamp(38px, 16.86px + 6.61vw, 112px);
+  --fluid-92: clamp(34px, 17.43px + 5.18vw, 92px);
+  --fluid-72: clamp(30px, 18px + 3.75vw, 72px);
+
+  /* Mid tier: fluid, gentler range */
+  --fluid-54: clamp(30px, 23.14px + 2.14vw, 54px);
+  --fluid-48: clamp(28px, 22.29px + 1.79vw, 48px);
+  --fluid-38: clamp(24px, 20px + 1.25vw, 38px);
+
+  /* Near-body tier: fluid at the top end only, floors 16-18px */
+  --fluid-28: clamp(18px, 15.14px + 0.89vw, 28px);
+  --fluid-24: clamp(17px, 15px + 0.63vw, 24px);
+  --fluid-22: clamp(16px, 14.29px + 0.54vw, 22px);
+
+  /* --- PRIMITIVE shell gutter ramp -----------------------------------------
+     px-5 / sm:px-8 / lg:px-12 / xl:px-[68px] from RESPONSIVE.md.
+     68px is the normalized gutter; the design's other three (41/53/71) are
+     defect 8 and are deliberately not encoded. */
+  --shell-gutter-raw: 20px;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (width >= 40rem) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --shell-gutter-raw: 32px;
+  }
+}
+@media (width >= 64rem) {
+  :root {
+    --shell-gutter-raw: 48px;
+  }
+}
+@media (width >= 80rem) {
+  :root {
+    --shell-gutter-raw: 68px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@theme {
+  /* ==========================================================================
+     COLOUR — semantic. Names approved in 00-overview.md, with the three
+     orchestrator corrections applied.
+     ======================================================================== */
+
+  /* Surfaces */
+  --color-bg: var(--raw-ink-900);
+  --color-surface-filled: var(--raw-oxblood-950);
+
+  /* Accent */
+  --color-accent: var(--raw-red-700);
+  --color-accent-soft: var(--raw-red-400);
+
+  /* Lines. CORRECTION 2: border-card (#4c4c4c) and rule (#363636) stay
+     distinct. They are visibly different; collapsing them changes the design. */
+  --color-border-card: var(--raw-grey-700);
+  --color-rule: var(--raw-grey-800);
+
+  /* Foreground */
+  --color-fg: var(--raw-white);
+  --color-fg-inverse: var(--raw-black);
+  --color-fg-muted: var(--raw-grey-500);
+  --color-fg-subtle: var(--raw-grey-450);
+
+  /* Display / wordmark. Layers 2 and 3 are the alpha'd stack of the hero
+     wordmark; those alphas exist for nothing else, so they are named by layer. */
+  --color-display: var(--raw-bone-100);
+  --color-wordmark-layer-2: rgb(248 238 238 / 0.49);
+  --color-wordmark-layer-3: rgb(248 238 238 / 0.06);
+
+  /* Filled shapes */
+  --color-button-light: var(--raw-grey-200);
+
+  /* CORRECTION 1: #d9d9d9 split. One token would mean swapping in real
+     project images later also recolours the contact panel. */
+  --color-project-greybox: var(--raw-grey-150);
+  --color-contact-panel: var(--raw-grey-150);
+
+  /* Focus. The design defines no interactive states (U7), so this is authored.
+     Uses the accent family's lighter member for >=3:1 against --color-bg;
+     #9c2222 on #11141c is ~2.2:1 and would fail as a focus indicator. */
+  --color-focus-ring: var(--raw-red-400);
+
+  /* ==========================================================================
+     TYPE SCALE — semantic, named by the role each size labels.
+     ======================================================================== */
+
+  /* Display tier — SDDystopian, fluid */
+  --text-wordmark: var(--fluid-116); /* 116: vertical "JABZ VESTIDAS" x3, marquee */
+  --text-section-title: var(--fluid-112); /* 112: FEATURED WORK, SERVICES */
+  --text-section-title-md: var(--fluid-92); /* 92: LET'S WORK TOGETHER */
+  --text-section-title-sm: var(--fluid-72); /* 72: hero headline, EXPERIENCES */
+
+  /* Mid tier — fluid */
+  --text-statement: var(--fluid-54); /* 54: intro statement */
+  --text-item-title: var(--fluid-48); /* 48: project titles, services titles */
+  --text-katakana: var(--fluid-48); /* 48: hero katakana columns */
+  --text-contact-label: var(--fluid-38); /* 38: Email/Contact/Alt Contact, the "9" */
+
+  /* Near-body tier — fluid at the top end only */
+  --text-card-title: var(--fluid-28); /* 28: company names, section subtitles */
+  --text-lead: var(--fluid-24); /* 24: button labels, service copy, contact values, tagline, footer */
+  --text-meta: var(--fluid-22); /* 22: //n numbers, role subtitles, [ n ], (Insert LOGO) */
+
+  /* Fixed tier — scaling these down hurts legibility and buys nothing */
+  --text-nav: 20px; /* 20: nav items, BIO card "BIO" / "Jabez Vestidas" */
+  --text-date: 18px; /* 18: experience date strings */
+  --text-body: 14px; /* 14: body copy, quotes, WARNING, social captions, resume link */
+  --text-caption: 12px; /* 12: light-mode link, hero copyright */
+  --text-microlabel: 10px; /* was 8 in Figma — APPROVED DEVIATION, see report */
+
+  /* ==========================================================================
+     LINE HEIGHT — font default (normal) everywhere except the two hero
+     katakana columns, the only nodes on the page with a numeric line-height.
+     ======================================================================== */
+  --leading-katakana-tight: 40px; /* ジャベス */
+  --leading-katakana: 48px; /* スピード */
+
+  /* ==========================================================================
+     FONT FAMILIES — wired in src/app/layout.tsx via next/font/local
+     ======================================================================== */
+  --font-display: var(--font-sd-dystopian); /* all headings */
+  --font-accent: var(--font-glitch-goblin); /* nav, accent paragraphs, buttons */
+  --font-body: var(--font-general-sans); /* body copy, BIO, quotes, katakana */
+
+  /* Default sans = body font, so untagged text inherits General Sans.
+     --font-mono is intentionally not overridden; Tailwind's default stack
+     stays available for `font-mono`. */
+  --font-sans: var(--font-general-sans);
+
+  /* ==========================================================================
+     SPACING — the design constrains no general scale (offsets are arbitrary:
+     41/53/68/71/96/129). Tailwind's default 4px spacing scale is unchanged.
+     Only these two layout constants are tokenized.
+     ======================================================================== */
+  --spacing-gutter: var(--shell-gutter-raw); /* re-apply the shell gutter inside a full-bleed section */
+  --spacing-services-indent: 129px; /* services description indent at md+ */
+
+  --container-shell: 1440px; /* the design frame width */
+
+  /* ==========================================================================
+     EFFECT — the only one in the design, on the 116px display text only
+     ======================================================================== */
+  --text-shadow-display: 0px 4px 4px rgb(0 0 0 / 0.25);
+}
+
+/* ============================================================================
+   BASE
+   ========================================================================== */
+
+@layer base {
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    /* font-family comes from --font-sans via Tailwind's preflight; the
+       scaffold's hardcoded Arial stack was removed because it overrode it. */
+  }
+
+  /* Authored focus indicator — the design defines none (U7) and all builders
+     need the same one. Never `outline: none`. */
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* ============================================================================
+   UTILITIES
+   ========================================================================== */
+
+/* The page shell. Every section inherits the gutter from this instead of
+   hardcoding one of the design's four inconsistent values. */
+@utility shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: var(--container-shell);
+  padding-inline: var(--shell-gutter-raw);
+}
+
+/* Explicit focus ring for elements that need it on a child/wrapper, or where
+   the base :focus-visible is overridden. */
+@utility focus-ring {
+  &:focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
 }

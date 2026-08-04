@@ -34,7 +34,9 @@ export const bio = {
   email: "vestidas.jabezjoshua@gmail.com",
   locationLabel: "LOCATION",
   location: "Philippines",
-  cta: { label: "About Me", href: "#about" },
+  // No destination exists yet (U6). The intro section is itself the "about"
+  // anchor, so pointing here would link to the thing the reader is already on.
+  cta: { label: "About Me", href: null as string | null },
 } as const;
 
 export const heroCopy = {
@@ -58,7 +60,9 @@ export const marqueeItems = [
 export const intro = {
   statement:
     "I help brands rise above the noise in the digital age. Together, we'll push creative boundaries and build experiences that leave a lasting impression.",
-  cta: { label: "More About me", href: "#about" },
+  // Was "#about", which is this section's own id — the CTA linked to itself.
+  // No further "about" destination exists (U6), so it renders as a button.
+  cta: { label: "More About me", href: null as string | null },
 } as const;
 
 export const featuredWork = {
