@@ -115,10 +115,19 @@ export function BootSequence() {
       release();
       window.clearInterval(cycle);
       timers.forEach(window.clearTimeout);
-      // Failsafe: StrictMode's double-invoke, an unmount, or a hot reload must
-      // never leave the phase stuck at "loading" — anything waiting on the
-      // reveal to show itself would stay hidden forever.
-      setBootPhase("done");
+      // NOTE: deliberately does NOT write "done" here.
+      //
+      // It used to, as a "never leave the phase stuck at loading" failsafe, and
+      // that broke the hero entrance outright. `useGSAP` is a LAYOUT effect while
+      // this is a PASSIVE one, so StrictMode's double-invoke interleaves them as:
+      //   HeroMotion mount → BootSequence mount → HeroMotion cleanup →
+      //   BootSequence cleanup (wrote "done") → HeroMotion remount
+      // The remount then read "done", concluded the reveal had already happened,
+      // and skipped the entrance permanently — in dev, every single load.
+      //
+      // The failsafe was also redundant: HeroMotion carries its own watchdog that
+      // runs the entrance even if the reveal event never arrives, so an unmount
+      // mid-loading can no longer leave anything hidden.
     };
   }, []);
 

@@ -61,6 +61,10 @@ export function HeroMotion() {
         const items = q("[data-hero-item]");
         const floats = q("[data-hero-float]");
         const glows = q("[data-hero-glow]");
+        // The headline's four lines animate individually rather than the <h1>
+        // moving as one block — it is the largest type in the hero, and a cascade
+        // reads as words arriving where a single slide reads as the panel moving.
+        const lines = q("[data-hero-line]");
 
         // Hidden state is applied HERE, from JS, never in the server-rendered
         // class list — so with JS off, GSAP missing, or reduced motion, the hero
@@ -80,6 +84,9 @@ export function HeroMotion() {
         gsap.set(items, { opacity: 0, y: 18, willChange: "transform, opacity" });
         gsap.set(floats, { opacity: 0, y: 14, willChange: "transform, opacity" });
         gsap.set(glows, { opacity: 0, willChange: "opacity" });
+        // Slightly further and from the left, so the headline sweeps in along the
+        // panel's reading direction rather than dropping.
+        gsap.set(lines, { opacity: 0, x: -28, willChange: "transform, opacity" });
 
         const tl = gsap.timeline({
           defaults: { ease: "power2.out", clearProps: "opacity,transform,willChange" },
@@ -90,9 +97,33 @@ export function HeroMotion() {
           // The panel itself never animates — its `lg` children are absolutely
           // positioned, so a transform on it would drag them all. Only contents.
           .to(items, { opacity: 1, y: 0, duration: 0.55, stagger: 0.06 }, 0.15)
+          // Line cascade, a touch slower and more spaced than the surrounding
+          // items so the headline is the beat the eye lands on.
+          .to(
+            lines,
+            { opacity: 1, x: 0, duration: 0.65, stagger: 0.09, ease: "power3.out" },
+            0.22,
+          )
           .to(floats, { opacity: 1, y: 0, duration: 0.5, stagger: 0.05 }, 0.4)
           // Lights last, alone, after the static has cleared. That is the payoff.
           .to(glows, { opacity: 1, duration: 1.1, ease: "power1.inOut" }, 0.55);
+
+        /**
+         * Hard safety net. The timeline hides content first and reveals it over
+         * ~1.7s, so anything that stalls GSAP's ticker between those two moments
+         * leaves the hero invisible. The ticker is rAF-driven, and rAF stops in a
+         * backgrounded tab — so a reader who switches tabs during the boot reveal
+         * and never returns to that tab would have left it mid-hide.
+         *
+         * `progress(1)` jumps to the end synchronously, WITHOUT rAF, and applies
+         * the timeline's `clearProps` — so this both guarantees visibility and
+         * leaves no inline styles behind. Generous margin: it only ever fires if
+         * the animation genuinely did not play.
+         */
+        const failsafe = window.setTimeout(() => {
+          if (tl.progress() < 1) tl.progress(1);
+        }, 4000);
+        return () => window.clearTimeout(failsafe);
       });
     };
 

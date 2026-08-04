@@ -154,12 +154,15 @@ export function Hero() {
         </div>
 
         <h1
-          data-hero-item
           id="hero-headline"
           className="text-section-title-sm text-shadow-glow-accent text-fg font-display whitespace-nowrap lg:absolute lg:top-[321px] lg:left-[51px]"
         >
+          {/* Each line is its own entrance target. The headline is the largest
+              type in the hero, and cascading its four lines is far more legible
+              as motion than sliding the whole block — which reads as the panel
+              moving rather than the words arriving. */}
           {site.headline.map((line) => (
-            <span key={line} className="block">
+            <span key={line} data-hero-line className="block">
               {line}
             </span>
           ))}
