@@ -50,14 +50,26 @@ export function Hero() {
             case that warning points at.
             Source re-encoded PNG -> WebP: 3.90MB -> 52KB at identical
             dimensions. The PNG mattered because public/ is served verbatim and
-            the optimizer had to decode 4MB per cold-cache variant. */}
+            the optimizer had to decode 4MB per cold-cache variant.
+
+            Framing reproduces the Figma, which places this image at
+            `left: 216px` in a 1440 frame — a 15% rightward offset, NOT the
+            mistake it was first read as. The uncovered 15% on the left sits
+            behind the red panel (453/1440 = 31.5% wide), so nothing shows
+            through; the right 15% overflows and is clipped by the parent.
+            Offset is lg+ only — below lg the panel stacks underneath rather
+            than overlapping, so the gap would be visible.
+
+            `object-top` because the design shows the image's full height with
+            its top edge at y=1. Cover-cropping from the centre at viewports
+            wider than 1440 pulls the framing upward and loses the top. */}
         <Image
           src="/assets/hero/hero-cover.webp"
           alt=""
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-cover object-top lg:translate-x-[15%]"
         />
         <LayeredWordmark />
       </div>
