@@ -8,6 +8,7 @@ import { Experiences } from "@/components/sections/Experiences";
 import { Services } from "@/components/sections/Services";
 import { Contact } from "@/components/sections/Contact";
 import { Footer } from "@/components/sections/Footer";
+import { BootSequence } from "@/components/ui/BootSequence";
 
 /**
  * Sections in Figma order.
@@ -27,30 +28,37 @@ import { Footer } from "@/components/sections/Footer";
  */
 export default function Home() {
   return (
-    <div className="app-scale relative flex min-h-full flex-col">
-      <header>
-        <HeroNav />
-      </header>
+    <>
+      {/* Outside `.app-scale` on purpose: that element carries `zoom`, and a
+          `fixed` descendant of a zoomed element is scaled with it, so the
+          overlay would not cover the viewport. */}
+      <BootSequence />
 
-      <main>
-        <Hero />
-        <Marquee />
-        <Intro />
-        <FeaturedWork />
-        <Experiences />
-        <Services />
-        <Contact />
-      </main>
+      <div className="app-scale relative flex min-h-full flex-col">
+        <header>
+          <HeroNav />
+        </header>
 
-      <Footer />
+        <main>
+          <Hero />
+          <Marquee />
+          <Intro />
+          <FeaturedWork />
+          <Experiences />
+          <Services />
+          <Contact />
+        </main>
 
-      {/*
-        Phase 4. Renders nothing — it owns one ScrollTrigger set for the whole
-        page, driven by `data-reveal-group` / `data-reveal` attributes in the
-        sections. Every section stays a Server Component; the client boundary is
-        this leaf and <MarqueeMotion> inside <Marquee>.
-      */}
-      <ScrollReveals />
-    </div>
+        <Footer />
+
+        {/*
+          Phase 4. Renders nothing — it owns one ScrollTrigger set for the whole
+          page, driven by `data-reveal-group` / `data-reveal` attributes in the
+          sections. Every section stays a Server Component; the client boundary
+          is this leaf and <MarqueeMotion> inside <Marquee>.
+        */}
+        <ScrollReveals />
+      </div>
+    </>
   );
 }

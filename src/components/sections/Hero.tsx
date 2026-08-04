@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 import { BioCard } from "@/components/sections/hero/BioCard";
 import { KatakanaColumn } from "@/components/sections/hero/KatakanaColumn";
@@ -49,15 +50,26 @@ export function Hero() {
       {/* Plane 1 — cover image, and the wordmark stack that sits on top of it but
           under the red panel (the design's paint order). */}
       <div className="relative aspect-[1440/793] w-full overflow-hidden lg:absolute lg:inset-0 lg:z-0 lg:aspect-auto">
-        {/* The LCP image. `fill` rather than width/height: at lg+ this plane is
+        {/* The LCP image.
+
+            `fill` rather than width/height: at lg+ this plane is
             `absolute inset-0` and its height is pinned to the red panel, so the
-            render box (viewport x 801) never matches the intrinsic 2154x1198
+            render box (viewport x 793) never matches the intrinsic 2154x1198
             ratio — which is exactly what triggered the dev-time
             "width or height modified, but not the other" warning. `fill` is the
             case that warning points at.
+
             Source re-encoded PNG -> WebP: 3.90MB -> 52KB at identical
             dimensions. The PNG mattered because public/ is served verbatim and
             the optimizer had to decode 4MB per cold-cache variant.
+
+            `unoptimized` deliberately: the scaled canvas is 1600 CSS px wide but
+            renders at the full viewport, and the browser resolves `sizes`
+            against the UNZOOMED layout — so it kept picking variants far below
+            the rendered size (1436px, and still only 1795px even when asked for
+            3200) and upscaling them, visibly softening this image. At 52KB the
+            source is smaller than most variants the optimizer would emit, so
+            serving it verbatim is both sharper and lighter.
 
             The Figma places this image at `left: 216px` in a 1440 frame (15%),
             which is a real offset and not the mistake it was first read as.
@@ -75,14 +87,6 @@ export function Hero() {
             `object-top` because the design shows the image's full height with
             its top edge at y=1. Cover-cropping from the centre at viewports
             wider than 1440 pulls the framing upward and loses the top. */}
-        {/* `unoptimized` deliberately. The scaled canvas is 1600 CSS px wide but
-            renders at the full viewport, and the browser resolves `sizes`
-            against the UNZOOMED layout — so it kept picking a variant far below
-            the rendered size (1436px, then 1795px even when asked for 3200) and
-            upscaling it, visibly softening the LCP image. The source is a 52KB
-            WebP at 2154x1198, which is smaller than most variants the optimizer
-            would emit, so serving it verbatim is both sharper and lighter than
-            any resizing. Nothing to gain from the optimizer here. */}
         <Image
           src="/assets/hero/hero-cover.webp"
           alt=""
@@ -103,11 +107,15 @@ export function Hero() {
             size (12px) and role (a print-style credit on the poster). */}
         <div className="flex items-start justify-between gap-4 lg:absolute lg:top-3 lg:right-[10px] lg:left-4">
           <p className="text-caption text-fg">{site.copyright}</p>
-          {/* `lightModeLink.href` is null (U6) and the light design does not
-              exist, so this is static text, not a link. */}
-          <p className="text-caption text-fg text-right whitespace-pre-line underline lg:w-[111px]">
+          {/* Now a real link to /light. It was underlined static text before,
+              which was misleading — underline without a destination reads as a
+              broken link. */}
+          <Link
+            href={heroCopy.lightModeLink.href}
+            className="text-caption text-fg text-right whitespace-pre-line underline transition-opacity hover:opacity-70 lg:w-[111px]"
+          >
             {heroCopy.lightModeLink.label}
-          </p>
+          </Link>
         </div>
 
         {/* Wireframe globe (21:4353) + the two katakana columns. The globe's

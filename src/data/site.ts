@@ -44,7 +44,9 @@ export const heroCopy = {
   warning:
     "Hiring this person might improve your company's productivity. Side effects may include cleaner code, sleeker design, faster releases, and fewer production issues. Proceed only if you're ready to raise the bar.",
   resume: { label: ">  DOWNLOAD MY RESUME", href: null as string | null },
-  lightModeLink: { label: "View it in light mode\n(Professional Mode)", href: null as string | null },
+  // Points at the /light route, which currently holds a work-in-progress
+  // placeholder. Light mode is a separate design, not a recolour.
+  lightModeLink: { label: "View it in light mode\n(Professional Mode)", href: "/light" },
   quotes: [
     { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
     { text: "Quality means doing it right when no one is looking.", author: "Henry Ford" },

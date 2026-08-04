@@ -21,8 +21,10 @@ export function ServiceItem({ service }: { service: Service }) {
         data-reveal
         className="text-item-title font-display text-fg flex items-baseline gap-3 uppercase md:gap-4"
       >
+        {/* The `//` is braced rather than bare JSX text: bare `//` trips
+            react/jsx-no-comment-textnodes, which reads it as a stray comment. */}
         <span aria-hidden="true" className="text-meta font-display text-fg-subtle shrink-0">
-          //{service.index}
+          {`//${service.index}`}
         </span>
         <span>{service.title}</span>
       </h3>

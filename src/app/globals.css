@@ -314,3 +314,115 @@
     box-shadow: 0 0 0 4px var(--color-fg);
   }
 }
+
+/* ============================================================================
+   BOOT SEQUENCE (dark mode only)
+
+   The overlay is server-rendered visible so there is no flash of the page
+   before it appears. `boot-dismiss` is a CSS fallback that hides it even if JS
+   never runs — without it, a JS failure would leave the site permanently
+   behind a loading screen. BootSequence.tsx removes it sooner, once fonts are
+   ready.
+   ========================================================================== */
+
+@keyframes boot-dismiss {
+  0%,
+  88% {
+    opacity: 1;
+    visibility: visible;
+  }
+  100% {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes boot-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Irregular on purpose — an even fade reads as a CSS transition, not a system
+   powering up. */
+@keyframes boot-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  12% {
+    opacity: 0.35;
+  }
+  14% {
+    opacity: 1;
+  }
+  46% {
+    opacity: 0.7;
+  }
+  48% {
+    opacity: 1;
+  }
+  71% {
+    opacity: 0.45;
+  }
+  73% {
+    opacity: 1;
+  }
+}
+
+/* Chromatic split. Sits behind the real text and is nudged off-register. */
+@keyframes boot-glitch {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-3px, 1px);
+  }
+  40% {
+    transform: translate(2px, -1px);
+  }
+  60% {
+    transform: translate(-1px, -2px);
+  }
+  80% {
+    transform: translate(3px, 1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Keep the dismissal — it is the no-JS escape hatch — but drop the motion and
+     show the progress bar already filled rather than at scaleX(0). */
+  .boot-overlay {
+    animation-duration: 0.9s;
+  }
+  .boot-flicker,
+  .boot-glitch {
+    animation: none;
+  }
+  .boot-progress {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
+/* Vertical travel for the boot sweep. Separate from boot-progress, which scales
+   on X for the progress rail. */
+@keyframes boot-sweep {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(300%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .boot-overlay [style*="boot-sweep"] {
+    animation: none !important;
+    opacity: 0;
+  }
+}

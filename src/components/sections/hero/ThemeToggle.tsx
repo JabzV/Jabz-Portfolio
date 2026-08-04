@@ -1,26 +1,28 @@
 import Image from "next/image";
+import Link from "next/link";
 
 /**
  * The sun toggle in the hero nav (Figma `16:3327`, 45×45 group).
  *
- * The Figma "Light Mode" frame is an entirely different design that has not been
- * made, so this cannot work for the foreseeable future. It stays rendered because
- * it is a visible design element, but it is announced as unavailable:
- * `aria-disabled` (not `disabled`, which would drop it from the tab order) and no
- * hover affordance. No state, no handler, therefore no `"use client"`.
+ * Now a real link to `/light` rather than the inert button it was. Light mode is
+ * a separate design, not a recolour, so it is a route — which means this needs no
+ * client state and stays a Server Component. `/light` currently holds a
+ * work-in-progress placeholder.
+ *
+ * Still `aria-disabled`-free on purpose: it genuinely navigates now, so
+ * announcing it as unavailable would be wrong.
  *
  * The 41px white circle shipped from Figma as `nav-toggle-ellipse.svg`; it was a
  * single `<circle fill=white>` and is CSS here.
  */
 export function ThemeToggle() {
   return (
-    <button
-      type="button"
-      aria-disabled="true"
-      aria-label="Light mode is not available"
-      className="grid size-[45px] shrink-0 cursor-default place-items-center"
+    <Link
+      href="/light"
+      aria-label="Switch to light mode (work in progress)"
+      className="grid size-[45px] shrink-0 place-items-center transition-opacity hover:opacity-80"
     >
-      <span className="grid size-[41px] place-items-center rounded-full bg-fg">
+      <span className="bg-fg grid size-[41px] place-items-center rounded-full">
         <Image
           src="/assets/hero/icon-sun.png"
           alt=""
@@ -29,6 +31,6 @@ export function ThemeToggle() {
           className="size-6 object-contain"
         />
       </span>
-    </button>
+    </Link>
   );
 }

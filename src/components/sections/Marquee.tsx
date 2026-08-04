@@ -12,7 +12,9 @@ import { marqueeItems } from "@/data/site";
 const SEPARATOR = " - ";
 
 /** One full pass of the phrase list. Duplicated below to make the loop seamless. */
-const TRACK_COPY = marqueeItems.map((phrase) => `${phrase}${SEPARATOR}`).join("");
+const TRACK_COPY = marqueeItems
+  .map((phrase) => `${phrase}${SEPARATOR}`)
+  .join("");
 
 /**
  * Marquee — full-bleed scrolling statement band. Figma y 842–927.
@@ -46,7 +48,7 @@ const TRACK_COPY = marqueeItems.map((phrase) => `${phrase}${SEPARATOR}`).join(""
  */
 export function Marquee() {
   return (
-    <section className="mt-6 w-full overflow-clip sm:mt-8 lg:mt-9 xl:mt-10">
+    <section className="my-4 w-full overflow-clip sm:mt-8 lg:my-5 xl:my-6">
       <div
         data-marquee-track
         className="text-wordmark font-display text-display text-shadow-display flex w-max flex-nowrap"
@@ -54,7 +56,10 @@ export function Marquee() {
         <span className="shrink-0 whitespace-nowrap">{TRACK_COPY}</span>
         {/* Copy B: visual continuity only — the phrases are already in the
             accessibility tree once, above. */}
-        <span aria-hidden="true" className="shrink-0 select-none whitespace-nowrap">
+        <span
+          aria-hidden="true"
+          className="shrink-0 select-none whitespace-nowrap"
+        >
           {TRACK_COPY}
         </span>
       </div>
