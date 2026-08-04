@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# vendored agent skills (8.5MB, 235 files) — reinstall with:
+#   npx -y skills@latest add vercel-labs/skills --skill find-skills --agent claude-code --project --copy -y
+#   npx -y skills@latest add nextlevelbuilder/ui-ux-pro-max-skill --skill '*' --agent claude-code --project --copy -y
+#   npx -y skills@latest add greensock/gsap-skills -s gsap-core -s gsap-scrolltrigger -s gsap-performance -s gsap-timeline --agent claude-code --project --copy -y
+/.claude/skills
