@@ -32,6 +32,24 @@
   --raw-grey-200: #e4e4e4;
   --raw-grey-150: #d9d9d9;
 
+  /* --- PRIMITIVE glow hues — GLOW ONLY, NOT UI COLOURS ---------------------
+     These two are the only genuine palette extension in the file. Everything
+     else above is traced to the Figma inventory; these are traced to the hero
+     PHOTOGRAPH (/assets/hero/hero-cover.webp), which contains four real light
+     sources. The lighting amplifies light already in the image rather than
+     layering neon over it.
+
+     They exist because the three street lamps in the photo are cyan-white.
+     Glowing them in `accent` red would fight the photograph. User-approved as
+     a glow-only hue.
+
+     Both are sized for ADDITIVE blending (`screen` / `plus-lighter`), which
+     needs headroom above the base surface or the glow reads as a flat wash —
+     hence #ff6a5c sitting well above `accent-soft` (#c75057) in luminance.
+     Do not use in markup, and do not use as text or UI colours. */
+  --raw-glow-red-500: #ff6a5c; /* bike taillight core — hot red-white */
+  --raw-glow-cyan-200: #d6ecec; /* street lamps — the photo's lamp colour */
+
   /* --- PRIMITIVE fluid type steps -----------------------------------------
      clamp() interpolated 320px -> 1440px viewport. Ceiling = the Figma value.
      Named by their design px because primitives ARE literals; the semantic
@@ -121,6 +139,30 @@
   --color-focus-ring: var(--raw-red-400);
 
   /* ==========================================================================
+     GLOW COLOURS — hero lighting. NOT general-purpose UI colours.
+
+     Named for the light source in the photograph each one amplifies, so a
+     builder can tell from the name where it belongs. Alpha carries INTENSITY
+     because these sit under `screen` / `plus-lighter`; that is why they are
+     literal rgb() rather than aliases — the alpha IS the semantic content.
+     (Same pattern already used by --color-wordmark-layer-2/3 above.)
+
+     Only two required a new primitive; the rest reuse the Figma palette, which
+     is what keeps the lighting tied to the existing design rather than
+     becoming a second parallel colour system.
+
+     CAVEAT, unavoidable: Tailwind has no way to restrict a --color-* token to
+     particular utilities, so these do generate text-glow-*, border-glow-*,
+     etc. The `glow-` prefix is the guard. They are additive-blend fills for
+     gradient sprites only — never text, borders, or UI surfaces.
+     ======================================================================== */
+  --color-glow-taillight-core: rgb(255 106 92 / 0.6); /* raw-glow-red-500 */
+  --color-glow-taillight-haze: rgb(199 80 87 / 0.34); /* raw-red-400 */
+  --color-glow-lamp: rgb(214 236 236 / 0.34); /* raw-glow-cyan-200 */
+  --color-glow-edge: rgb(199 80 87 / 0.75); /* raw-red-400, panel-edge filament */
+  --color-glow-scan: rgb(248 238 238 / 0.1); /* raw-bone-100, pointer light */
+
+  /* ==========================================================================
      TYPE SCALE — semantic, named by the role each size labels.
      ======================================================================== */
 
@@ -189,6 +231,59 @@
      EFFECT — the only one in the design, on the 116px display text only
      ======================================================================== */
   --text-shadow-display: 0px 4px 4px rgb(0 0 0 / 0.25);
+
+  /* ==========================================================================
+     GLOW EFFECTS — all STATIC. None of these is animated, ever.
+
+     Animating filter/drop-shadow/box-shadow is a per-frame raster pass over the
+     whole blur area and is banned in this design. Painted once, these are
+     cached and free. Every moving glow is a pre-baked radial-gradient sprite
+     animated on opacity/transform only — see the --animate-* tokens below.
+
+     Deliberately NOT applied to :focus-visible. That indicator's ratios are
+     measured (see @layer base); an added shadow would soften its edge and
+     invalidate them.
+     ======================================================================== */
+  --text-shadow-glow-accent: 0 0 18px rgb(199 80 87 / 0.45); /* <h1>: backlit signage, not flat type */
+  --text-shadow-glow-link: 0 0 12px rgb(248 238 238 / 0.55); /* hover glow, the three real links */
+  --shadow-glow-edge: 0 0 12px 0 rgb(199 80 87 / 0.55); /* static box-shadow on the filament */
+
+  /* ==========================================================================
+     MOTION — ambient hero lighting.
+
+     Exposed as --animate-* so Server Components can apply them as plain class
+     names. (BootSequence is a client component and toggles inline `style`
+     instead; that difference is why its reduced-motion rules need the
+     attribute-selector treatment further down.)
+
+     Two rules hold across all of it:
+       1. No ambient loop shorter than 4s. Faster becomes rhythmic enough to
+          compete with reading the headline.
+       2. Periods are mutually non-harmonic (5.7 / 4.2 / 7.3 / 11.1 / 9.4), so
+          the combined beat drifts and never resolves into a visible pulse.
+     ======================================================================== */
+  --animate-hero-glow-core: hero-glow-breathe 5.7s ease-in-out infinite;
+  --animate-hero-glow-haze: hero-glow-breathe 4.2s ease-in-out infinite;
+
+  /* The three street lamps reuse the loader's own `boot-flicker` curve rather
+     than a new one. Same irregular stops the boot screen uses = the hero reads
+     as the same world as the loader. Negative delays desynchronise them so
+     they never flicker in unison; each offset is unrelated to the others and
+     smaller than its own duration. */
+  --animate-hero-lamp-a: boot-flicker 7.3s ease-in-out -2.1s infinite;
+  --animate-hero-lamp-b: boot-flicker 11.1s ease-in-out -5.6s infinite;
+  --animate-hero-lamp-c: boot-flicker 9.4s ease-in-out -8.3s infinite;
+
+  --animate-hero-edge: hero-edge-travel 9s linear infinite;
+
+  /* NOTE THE USAGE — these two are not symmetrical, because Tailwind v4 has an
+     --ease-* namespace but NO --duration-* namespace:
+         ease:     ease-hero-out                 <- normal utility
+         duration: duration-(--duration-hover)   <- arbitrary-property syntax
+     Writing `duration-hover` compiles to NOTHING, silently. Verified against
+     tailwindcss 4.3.3. */
+  --duration-hover: 180ms;
+  --ease-hero-out: cubic-bezier(0.16, 1, 0.3, 1); /* CSS only; GSAP uses its own ease strings */
 }
 
 /* ============================================================================
@@ -224,6 +319,29 @@
     scrollbar-gutter: stable;
   }
 
+  /* ==========================================================================
+     !! DO NOT ADD COMPOSITING PROPERTIES TO html, body, OR ANY WRAPPER
+        AROUND .app-scale !!
+
+     The custom cursor paints with `mix-blend-mode: difference` so it stays
+     visible over both the near-black background and the white BIO card without
+     needing to know what is under it. That blend resolves against the nearest
+     stacking/isolation context. Any of the following, added to `html`, `body`,
+     or an ancestor of the cursor, silently traps it in a smaller context and it
+     renders FLAT WHITE:
+
+         isolation: isolate      opacity: <1>        filter: <any>
+         transform: <any>        contain: paint      backdrop-filter: <any>
+         will-change: transform, opacity, filter
+
+     There is no error, no warning, and no console output — the cursor just
+     stops inverting. Nothing in the tree does this today; this comment exists
+     to keep it that way.
+
+     `zoom` on .app-scale is NOT one of the offenders and is safe. It is,
+     however, the most likely place someone reaches for `transform: scale()`
+     instead — which WOULD break the cursor. Leave it as `zoom`.
+     ========================================================================== */
   body {
     background: var(--color-bg);
     color: var(--color-fg);
@@ -255,6 +373,30 @@
     outline-offset: 2px;
     box-shadow: 0 0 0 4px var(--color-fg);
   }
+}
+
+/* ============================================================================
+   CUSTOM CURSOR
+
+   Unlayered and !important on purpose, and the `*` is load-bearing — none of
+   the three is laziness:
+
+   - The `*`: three sites set `cursor-default` (Hero.tsx:172, BioCard.tsx:43,
+     NotchedButton.tsx:80). Without the descendant selector those keep their
+     native arrow, which then draws ON TOP of the custom cursor — two pointers.
+   - Unlayered + !important: beats both @layer utilities and any inline
+     `style="cursor:..."`, so no component can reintroduce an arrow locally.
+
+   Gated on the attribute, never unconditional. JS sets [data-custom-cursor]
+   only after confirming a fine pointer and no forced-colors. So if the script
+   fails, throws, or never runs, the attribute is absent and the user keeps a
+   working native cursor. `cursor: none` must NEVER be a static stylesheet rule
+   here — that would leave a pointerless page on any JS failure, which is an
+   accessibility trap rather than a cosmetic bug.
+   ========================================================================== */
+html[data-custom-cursor],
+html[data-custom-cursor] * {
+  cursor: none !important;
 }
 
 /* ============================================================================
@@ -393,21 +535,9 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  /* Keep the dismissal — it is the no-JS escape hatch — but drop the motion and
-     show the progress bar already filled rather than at scaleX(0). */
-  .boot-overlay {
-    animation-duration: 0.9s;
-  }
-  .boot-flicker,
-  .boot-glitch {
-    animation: none;
-  }
-  .boot-progress {
-    animation: none;
-    transform: scaleX(1);
-  }
-}
+/* Boot reduced-motion rules are consolidated into ONE block at the end of this
+   section — see "Boot sequence: reduced motion". They used to be split across
+   three blocks here, and most of them silently did nothing. */
 
 /* Vertical travel for the boot sweep. Separate from boot-progress, which scales
    on X for the progress rail. */
@@ -417,13 +547,6 @@
   }
   to {
     transform: translateY(300%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .boot-overlay [style*="boot-sweep"] {
-    animation: none !important;
-    opacity: 0;
   }
 }
 
@@ -455,28 +578,83 @@
   }
 }
 
+/* ============================================================================
+   BOOT SEQUENCE: REDUCED MOTION  (consolidated — was three blocks, mostly dead)
+
+   BootSequence.tsx applies almost every one of its animations through an inline
+   `style` attribute on an element that carries NO corresponding class. Only
+   .boot-panel, .boot-static and .boot-roll exist in the markup. The previous
+   rules targeted .boot-overlay, .boot-flicker, .boot-glitch, .boot-progress,
+   .boot-flash and .boot-complete-text — of which the first four match nothing
+   and the last two describe elements that do not exist at all. Reduced-motion
+   coverage for the entire loading phase was therefore ineffective.
+
+   Two independent reasons each rule must be written the way it is:
+
+     1. SELECTOR — matching on [style*="name"] hits the element that actually
+        carries the animation, with no dependency on a class being added. Rules
+        are written to match the class OR the inline style, so they are correct
+        both now and after any future BootSequence.tsx cleanup.
+
+     2. !important — NON-NEGOTIABLE, and the reason adding classes alone would
+        not have fixed this. An inline `style="animation:..."` outranks every
+        stylesheet declaration regardless of selector specificity. Without
+        !important these rules lose even when they match.
+
+   The substrings are safe to match unscoped: "boot-" animation names appear
+   nowhere else in the project.
+   ========================================================================== */
 @media (prefers-reduced-motion: reduce) {
-  /* No static, no flash — just get out of the way. */
-  .boot-panel[data-phase="complete"] {
+  /* Ambient loops during loading: stop them where they are. */
+  .boot-flicker,
+  [style*="boot-flicker"],
+  .boot-glitch,
+  [style*="boot-glitch"],
+  .boot-static,
+  .boot-static > *,
+  [style*="boot-static-jitter"],
+  [style*="boot-static-rise"],
+  .boot-complete-text,
+  [style*="boot-complete-text"] {
+    animation: none !important;
+  }
+
+  /* boot-vsync is deliberately NOT listed above: it is applied in the same
+     inline shorthand as boot-signal-lock on .boot-panel, so it is already
+     replaced wholesale by the completion rule at the end of this block.
+     Listing it here would just create two competing !important declarations
+     on one element. */
+
+  /* Travelling bands and flashes have no meaningful static position. */
+  .boot-roll,
+  [style*="boot-roll"],
+  [style*="boot-sweep"],
+  .boot-flash,
+  [style*="boot-flash"] {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  /* Show the progress rail already filled rather than frozen at scaleX(0),
+     which would read as a stalled loader. */
+  .boot-progress,
+  [style*="boot-progress"] {
+    animation: none !important;
+    transform: scaleX(1) !important;
+  }
+
+  /* KEEP this animation running — it is the no-JS escape hatch. If JS never
+     fires, boot-dismiss is the only thing that uncovers the page, so it must
+     not be set to `none`. Shortened, not removed. */
+  [style*="boot-dismiss"] {
+    animation-duration: 0.9s !important;
+  }
+
+  /* The completion reveal collapses to a quick fade instead of the signal-lock
+     sequence. .boot-panel is one of the three classes that does exist. */
+  .boot-panel[data-phase="complete"],
+  [style*="boot-signal-lock"] {
     animation: boot-dismiss 0.35s linear forwards !important;
-  }
-  .boot-roll {
-    animation: none !important;
-    opacity: 0 !important;
-  }
-  /* Keep the noise floor, drop its motion. */
-  .boot-static {
-    animation: none !important;
-  }
-  .boot-static > * {
-    animation: none !important;
-  }
-  .boot-flash {
-    animation: none !important;
-    opacity: 0 !important;
-  }
-  .boot-complete-text {
-    animation: none !important;
   }
 }
 
@@ -598,4 +776,134 @@
   to {
     opacity: 1;
   }
+}
+
+/* ============================================================================
+   HERO LIGHTING
+
+   Keyframes live at top level, not inside @theme, matching every other keyframe
+   in this file. Keyframes declared inside @theme are only emitted when their
+   --animate-* token is referenced; top-level ones are always present. That
+   matters for `boot-flicker`, which the hero lamps reuse — it must exist
+   whether or not the boot screen is on the page.
+   ========================================================================== */
+
+/* Ambient swell of the taillight sprites. Opacity 0.55 -> 1 with <=6% scale.
+   Stops are 23/41/58/79 with the peak deliberately off-centre: evenly spaced
+   stops interpolate into a sine wave, which reads as a pulsing UI element
+   rather than light. Same reasoning as boot-flicker's irregular stops. */
+@keyframes hero-glow-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(1);
+  }
+  23% {
+    opacity: 0.82;
+    transform: scale(1.028);
+  }
+  41% {
+    opacity: 0.66;
+    transform: scale(1.012);
+  }
+  58% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+  79% {
+    opacity: 0.74;
+    transform: scale(1.021);
+  }
+}
+
+/* Filament travelling down the panel edge. The opacity envelope is not
+   decoration: a linear loop that starts and ends at full opacity visibly POPS
+   at the wrap point. Fading in over the first 12% and out over the last 12%
+   hides the seam, so the 9s loop reads as continuous. */
+@keyframes hero-edge-travel {
+  0% {
+    transform: translateY(-120%);
+    opacity: 0;
+  }
+  12% {
+    opacity: 1;
+  }
+  88% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(320%);
+    opacity: 0;
+  }
+}
+
+/* --- Reduced motion: NO MOTION, NOT NO LIGHT -------------------------------
+   Killing the glows outright would strip the cyberpunk theme from exactly the
+   users who opted out of movement, which is the wrong trade — they asked for
+   stillness, not a different design. So every ambient glow HOLDS at the
+   mid-point of its own animated range and simply stops moving.
+
+   Held values are computed per-curve rather than shared, because the two curves
+   have different ranges: hero-glow-breathe spans 0.55-1 (mid 0.78) and
+   boot-flicker spans 0.35-1 (mid 0.68).
+
+   The travelling filament is the one exception — it has no meaningful static
+   position, so it goes to opacity 0.
+
+   These target the .animate-* utility classes Tailwind generates, which are
+   real classes in the markup, so no attribute-selector workaround is needed. */
+@media (prefers-reduced-motion: reduce) {
+  .animate-hero-glow-core,
+  .animate-hero-glow-haze {
+    animation: none !important;
+    opacity: 0.78;
+    transform: none !important;
+  }
+
+  .animate-hero-lamp-a,
+  .animate-hero-lamp-b,
+  .animate-hero-lamp-c {
+    animation: none !important;
+    opacity: 0.68;
+  }
+
+  .animate-hero-edge {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
+/* --- Offscreen pause -------------------------------------------------------
+   HeroMotion sets [data-hero-visible] on [data-hero] while the section is in
+   view and removes it when it leaves. Without this rule the ambient glows keep
+   compositing while the reader is four sections down.
+
+   `animation-play-state: paused`, never `animation: none`. Pausing holds the
+   current frame; `none` would snap every glow back to its keyframe start, so
+   scrolling back up would show a visible jump as five sprites reset in unison.
+
+   TWO SELECTORS, deliberately, matching the class-OR-structure approach used
+   for the boot rules:
+     - `[data-hero-glow] > *` is the structural route. Every animated sprite is
+       a direct child of a glow wrapper (the wrapper is GSAP's entrance-opacity
+       layer and must keep its own transform/opacity untouched), so this keeps
+       working when a new glow is added without editing this file.
+     - `[class*="animate-hero-"]` is the behavioural route, and catches any
+       hero animation that is ever placed outside a wrapper.
+   Neither depends on the six individual token names.
+
+   `[data-hero-scan]` is intentionally unmatched — the pointer light has no CSS
+   animation at all (GSAP transforms it), so there is nothing to pause.
+
+   COMPOSES WITH THE REDUCED-MOTION BLOCK ABOVE — verified, not assumed:
+   that block sets `animation: none !important`. `animation` is a shorthand, so
+   it also resets `animation-play-state` to its initial `running`, and does so
+   with !important — which beats this rule's unimportant declaration regardless
+   of source order. So under reduced motion the computed play-state is
+   `running`, but `animation-name` is `none`, meaning no animation exists to be
+   running or paused. The outcome is identical either way and ordering is
+   irrelevant. This is a genuine no-op, not a race. */
+[data-hero]:not([data-hero-visible]) [data-hero-glow] > *,
+[data-hero]:not([data-hero-visible]) [class*="animate-hero-"] {
+  animation-play-state: paused;
 }

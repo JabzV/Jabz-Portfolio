@@ -1,3 +1,5 @@
+import type { ComponentProps } from "react";
+
 /**
  * A hero pull quote (Figma `16:4337` Jobs, `16:4339` Ford).
  *
@@ -10,13 +12,13 @@ export function QuoteBlock({
   text,
   author,
   className = "",
+  ...rest
 }: {
   text: string;
   author: string;
-  className?: string;
-}) {
+} & ComponentProps<"figure">) {
   return (
-    <figure className={`text-body text-fg font-body ${className}`}>
+    <figure className={`text-body text-fg font-body ${className}`} {...rest}>
       <blockquote>
         <span className="underline">&ldquo;{text}&rdquo;</span>
       </blockquote>

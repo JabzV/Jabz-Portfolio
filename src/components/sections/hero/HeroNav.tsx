@@ -41,7 +41,11 @@ export function HeroNav() {
           <li key={item.href}>
             <Link
               href={item.href}
-              className="font-accent text-nav text-fg inline-flex min-h-[44px] items-center transition-opacity hover:opacity-70 lg:min-h-0"
+              // The glow is additive to the existing opacity fade, not a
+              // replacement: opacity remains the accessible signal, and the glow
+              // is what makes the TOTAL absence of any response on the two
+              // aria-disabled CTAs unmistakable rather than merely subtle.
+              className="font-accent text-nav text-fg duration-(--duration-hover) hover:text-shadow-glow-link inline-flex min-h-[44px] items-center transition-[opacity,text-shadow] hover:opacity-70 lg:min-h-0"
             >
               {item.label}
             </Link>

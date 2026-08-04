@@ -31,6 +31,10 @@ export function LayeredWordmark() {
       {layers.map((layer) => (
         <div
           key={layer.color}
+          // The entrance staggers these on x. It is the one moment the 1.0 /
+          // 0.49 / 0.06 depth relationship becomes legible — arriving together,
+          // as they do now, it reads as a single blurred mark.
+          data-hero-wordmark-layer
           className={`h-full w-[85px] items-center justify-center ${layer.visibility}`}
         >
           <span

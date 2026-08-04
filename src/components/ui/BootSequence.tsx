@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { dispatchBootReveal, setBootPhase } from "@/lib/boot-signal";
+
 /**
  * Cyberpunk boot overlay for the dark design. Shown on every load/reload.
  *
@@ -59,6 +61,11 @@ export function BootSequence() {
   useEffect(() => {
     mountedAt.current = performance.now();
 
+    // Publishes the phase for anything that animates on reveal (see
+    // src/lib/boot-signal.ts). Set before anything else so a leaf hydrating in
+    // this same tick reads "loading" rather than an absent attribute.
+    setBootPhase("loading");
+
     const body = document.body;
     const prevOverflow = body.style.overflow;
     body.style.overflow = "hidden";
@@ -81,7 +88,19 @@ export function BootSequence() {
           // Released here so the page is interactive during the reveal.
           release();
           setPhase("complete");
-          timers.push(window.setTimeout(() => setDone(true), COMPLETE_MS));
+
+          // Signal at the same instant boot-signal-lock starts, so consumers can
+          // time their entrance against the static thinning rather than against
+          // the overlay being gone.
+          setBootPhase("revealing");
+          dispatchBootReveal();
+
+          timers.push(
+            window.setTimeout(() => {
+              setBootPhase("done");
+              setDone(true);
+            }, COMPLETE_MS),
+          );
         }, Math.max(0, MIN_LOADING_MS - elapsed)),
       );
     };
@@ -96,6 +115,10 @@ export function BootSequence() {
       release();
       window.clearInterval(cycle);
       timers.forEach(window.clearTimeout);
+      // Failsafe: StrictMode's double-invoke, an unmount, or a hot reload must
+      // never leave the phase stuck at "loading" — anything waiting on the
+      // reveal to show itself would stay hidden forever.
+      setBootPhase("done");
     };
   }, []);
 

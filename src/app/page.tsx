@@ -9,6 +9,7 @@ import { Services } from "@/components/sections/Services";
 import { Contact } from "@/components/sections/Contact";
 import { Footer } from "@/components/sections/Footer";
 import { BootSequence } from "@/components/ui/BootSequence";
+import { CustomCursor } from "@/components/ui/CustomCursor";
 
 /**
  * Sections in Figma order.
@@ -29,10 +30,16 @@ import { BootSequence } from "@/components/ui/BootSequence";
 export default function Home() {
   return (
     <>
-      {/* Outside `.app-scale` on purpose: that element carries `zoom`, and a
-          `fixed` descendant of a zoomed element is scaled with it, so the
-          overlay would not cover the viewport. */}
+      {/* Both are outside `.app-scale` on purpose: that element carries `zoom`,
+          and a `fixed` descendant of a zoomed element is scaled with it — so the
+          overlay would not cover the viewport, and the cursor would sit at
+          `clientX * scale` (≈60% off at 2560px), because pointer coordinates are
+          reported in unzoomed client space regardless of the zoom underneath.
+          Keeping both here also puts the cursor's `mix-blend-mode: difference`
+          outside the zoomed stacking context, so it blends against the whole
+          page rather than a subtree. Do not "tidy" these inside. */}
       <BootSequence />
+      <CustomCursor />
 
       <div className="app-scale relative flex min-h-full flex-col">
         <header>

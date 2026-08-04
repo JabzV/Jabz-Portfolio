@@ -13,10 +13,15 @@ import Image from "next/image";
  * Caption is SDDystopian, which appears to be an uppercase-only face: the data's
  * "Linkedin" / "instagram" render as LINKEDIN / INSTAGRAM, matching the
  * reference render.
+ *
+ * `data-cursor="scan"` is the one case element semantics cannot express: the
+ * figure genuinely is not interactive, yet the cursor should acknowledge it,
+ * because the QR *is* the affordance. Every other target on the site resolves
+ * automatically from `a[href]` / `button` / `aria-disabled`.
  */
 export function SocialBlock({ label, icon }: { label: string; icon: string }) {
   return (
-    <figure className="flex w-[100px] flex-col items-center gap-2">
+    <figure data-cursor="scan" className="flex w-[100px] flex-col items-center gap-2">
       <Image src={icon} alt="" width={100} height={100} className="size-[100px]" />
       <figcaption className="text-body text-fg font-display text-center">{label}</figcaption>
     </figure>

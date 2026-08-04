@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { HeroMotion } from "@/components/motion/HeroMotion";
 import { BioCard } from "@/components/sections/hero/BioCard";
+import { HeroEdgeLight } from "@/components/sections/hero/HeroEdgeLight";
+import { HeroGlow } from "@/components/sections/hero/HeroGlow";
 import { KatakanaColumn } from "@/components/sections/hero/KatakanaColumn";
 import { LayeredWordmark } from "@/components/sections/hero/LayeredWordmark";
 import { QuoteBlock } from "@/components/sections/hero/QuoteBlock";
@@ -44,6 +47,7 @@ export function Hero() {
 
   return (
     <section
+      data-hero
       aria-labelledby="hero-headline"
       className="bg-bg relative flex w-full flex-col gap-10 overflow-hidden pb-16 lg:block lg:gap-0 lg:pb-0"
     >
@@ -87,15 +91,28 @@ export function Hero() {
             `object-top` because the design shows the image's full height with
             its top edge at y=1. Cover-cropping from the centre at viewports
             wider than 1440 pulls the framing upward and loses the top. */}
-        <Image
-          src="/assets/hero/hero-cover.webp"
-          alt=""
-          fill
-          priority
-          unoptimized
-          className="object-cover object-top lg:translate-x-[10.5%]"
-        />
+        {/* The wrapper exists so the entrance can scale the cover without
+            fighting the Image's own `lg:translate-x-[10.5%]`. GSAP owns this
+            element's transform; Tailwind owns the Image's. Never let both write
+            the same transform.
+            `absolute inset-0` keeps it the same box as the plane, so `fill` and
+            the translate percentage resolve exactly as before. */}
+        <div data-hero-cover className="absolute inset-0">
+          <Image
+            src="/assets/hero/hero-cover.webp"
+            alt=""
+            fill
+            priority
+            unoptimized
+            className="object-cover object-top lg:translate-x-[10.5%]"
+          />
+        </div>
         <LayeredWordmark />
+        {/* After the wordmark so the pointer scan light passes OVER it, and a
+            SIBLING of [data-hero-cover] rather than a child: mix-blend-mode only
+            caches its backdrop while that backdrop is static, and the cover
+            wrapper's transform animates for 1.4s during the entrance. */}
+        <HeroGlow />
       </div>
 
       {/* Plane 2 — the red panel. Full-width block below `lg`; the designed
@@ -105,14 +122,14 @@ export function Hero() {
         {/* Hero copyright (22:4371) + light-mode link (22:4361).
             DEFECT 5: this copyright also exists in the footer. Kept — different
             size (12px) and role (a print-style credit on the poster). */}
-        <div className="flex items-start justify-between gap-4 lg:absolute lg:top-3 lg:right-[10px] lg:left-4">
+        <div data-hero-item className="flex items-start justify-between gap-4 lg:absolute lg:top-3 lg:right-[10px] lg:left-4">
           <p className="text-caption text-fg">{site.copyright}</p>
           {/* Now a real link to /light. It was underlined static text before,
               which was misleading — underline without a destination reads as a
               broken link. */}
           <Link
             href={heroCopy.lightModeLink.href}
-            className="text-caption text-fg text-right whitespace-pre-line underline transition-opacity hover:opacity-70 lg:w-[111px]"
+            className="text-caption text-fg duration-(--duration-hover) hover:text-shadow-glow-link text-right whitespace-pre-line underline transition-[opacity,text-shadow] hover:opacity-70 lg:w-[111px]"
           >
             {heroCopy.lightModeLink.label}
           </Link>
@@ -121,7 +138,7 @@ export function Hero() {
         {/* Wireframe globe (21:4353) + the two katakana columns. The globe's
             right edge (32+272) is exactly the first column's left edge, so the
             design's 85px-style pitch here is simply a zero gap. */}
-        <div className="flex items-start lg:absolute lg:top-[33px] lg:left-8">
+        <div data-hero-item className="flex items-start lg:absolute lg:top-[33px] lg:left-8">
           <Image
             src="/assets/hero/hero-image-2.png"
             alt=""
@@ -137,8 +154,9 @@ export function Hero() {
         </div>
 
         <h1
+          data-hero-item
           id="hero-headline"
-          className="text-section-title-sm text-fg font-display whitespace-nowrap lg:absolute lg:top-[321px] lg:left-[51px]"
+          className="text-section-title-sm text-shadow-glow-accent text-fg font-display whitespace-nowrap lg:absolute lg:top-[321px] lg:left-[51px]"
         >
           {site.headline.map((line) => (
             <span key={line} className="block">
@@ -147,12 +165,13 @@ export function Hero() {
           ))}
         </h1>
 
-        <p className="text-body text-fg font-body lg:absolute lg:top-[561px] lg:left-[51px] lg:w-[371px]">
+        <p data-hero-item className="text-body text-fg font-body lg:absolute lg:top-[561px] lg:left-[51px] lg:w-[371px]">
           <span className="font-semibold">{heroCopy.warningLabel}</span>: {heroCopy.warning}
         </p>
 
         {/* Hazard stripe rule (21:4356) */}
         <Image
+          data-hero-item
           src="/assets/hero/hero-image-3.png"
           alt=""
           aria-hidden="true"
@@ -167,6 +186,7 @@ export function Hero() {
             Not `disabled`: that would remove it from the tab order and hide a
             visible design element. */}
         <button
+          data-hero-item
           type="button"
           aria-disabled="true"
           className="text-body text-fg font-body min-h-[44px] cursor-default self-start text-left whitespace-pre lg:absolute lg:top-[711px] lg:left-[49px] lg:min-h-0"
@@ -178,7 +198,7 @@ export function Hero() {
             pitch and the 3px drop on the middle, un-rotated one are
             hand-placement drift in the design; reproduced. Decorative, and they
             need the 801px band, so they appear at `lg`+ only. */}
-        <span aria-hidden="true" className="hidden lg:block">
+        <span data-hero-item aria-hidden="true" className="hidden lg:block">
           <Image
             src="/assets/hero/hero-arrow-glyph.png"
             alt=""
@@ -205,11 +225,13 @@ export function Hero() {
 
       {/* Plane 3 — free-floating text over the cover. */}
       <QuoteBlock
+        data-hero-float
         text={ford.text}
         author={ford.author}
         className="px-5 sm:px-8 lg:absolute lg:top-[120px] lg:right-[241px] lg:z-20 lg:w-[182px] lg:px-0"
       />
       <QuoteBlock
+        data-hero-float
         text={jobs.text}
         author={jobs.author}
         className="px-5 sm:px-8 lg:absolute lg:top-[696px] lg:left-[52%] lg:z-20 lg:w-[178px] lg:px-0"
@@ -217,6 +239,7 @@ export function Hero() {
 
       {/* Decorative overlay glyphs (22:4376 arrow, 23:4379 badge). */}
       <Image
+        data-hero-float
         src="/assets/hero/hero-arrow-glyph.png"
         alt=""
         aria-hidden="true"
@@ -225,6 +248,7 @@ export function Hero() {
         className="hidden h-[83px] w-[140px] rotate-180 lg:absolute lg:top-[684px] lg:right-[320px] lg:z-20 lg:block"
       />
       <Image
+        data-hero-float
         src="/assets/hero/hero-badge-glyph.png"
         alt=""
         aria-hidden="true"
@@ -234,17 +258,27 @@ export function Hero() {
       />
 
       {/* Plane 4 — the BIO card, flush to the bottom-right corner at `lg`+. */}
-      <div className="self-center lg:absolute lg:right-0 lg:bottom-0 lg:z-20">
+      <div data-hero-float className="self-center lg:absolute lg:right-0 lg:bottom-0 lg:z-20">
         <BioCard />
       </div>
 
       {/* Plane 5 — social rail. A column on the design's right edge; a centred
           row below `lg`, where a 100px-wide column would look stranded. */}
-      <div className="flex flex-row justify-center gap-8 lg:absolute lg:top-[281px] lg:right-[18px] lg:z-20 lg:flex-col lg:gap-5">
+      <div data-hero-float className="flex flex-row justify-center gap-8 lg:absolute lg:top-[281px] lg:right-[18px] lg:z-20 lg:flex-col lg:gap-5">
         {social.map((item) => (
           <SocialBlock key={item.label} label={item.label} icon={item.icon} />
         ))}
       </div>
+
+      {/* A direct child of the section, not of the cover plane: the filament runs
+          down the red panel's right edge and must paint ABOVE the panel (z-10),
+          whereas the cover plane is z-0. */}
+      <HeroEdgeLight />
+
+      {/* Behaviour-only client leaf — renders null, so this section stays a
+          Server Component. Owns the boot-coordinated entrance and the pointer
+          scan light, driven by the data attributes above. */}
+      <HeroMotion />
     </section>
   );
 }
