@@ -151,9 +151,17 @@
   /* ==========================================================================
      LINE HEIGHT — font default (normal) everywhere except the two hero
      katakana columns, the only nodes on the page with a numeric line-height.
+     The `normal` default is enforced on `html` in @layer base below; see the
+     note there for why it is not a --default-font-line-height theme token.
      ======================================================================== */
   --leading-katakana-tight: 40px; /* ジャベス */
   --leading-katakana: 48px; /* スピード */
+
+  /* PROPOSED, NOT IN USE — do not apply in Phase 3.
+     Optional looser leading for multi-line small body copy only. The design
+     specifies `normal` everywhere, which is tight for prose; this exists so
+     the decision can be made in Phase 6 without a token change. */
+  --leading-prose: 1.5;
 
   /* ==========================================================================
      FONT FAMILIES — wired in src/app/layout.tsx via next/font/local
@@ -188,6 +196,26 @@
    ========================================================================== */
 
 @layer base {
+  /* LINE HEIGHT DEFAULT — load-bearing for parity.
+     00-overview.md: line-height is `normal` for EVERY text node on the page
+     except the two hero katakana columns. Tailwind's preflight hardcodes
+     `line-height: 1.5` on `html, :host` (preflight.css line 30) — as of
+     v4.3.3 there is NO `--default-font-line-height` theme variable, so this
+     cannot be fixed from @theme. It must be overridden here.
+
+     Inheriting 1.5 made every display heading ~2x too tall (72px h1 computed
+     108px instead of ~53px) and pushed the page to 8726px vs the design 7580px.
+
+     `normal` inherits as a keyword, so each element resolves it against its
+     OWN font metrics — which is exactly the design's behaviour across three
+     families with different default leadings.
+
+     This lives in @layer base, so every `leading-*` utility (which lands in
+     @layer utilities) still wins. --leading-katakana{,-tight} are unaffected. */
+  html {
+    line-height: normal;
+  }
+
   body {
     background: var(--color-bg);
     color: var(--color-fg);
