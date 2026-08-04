@@ -289,7 +289,15 @@
    ========================================================================== */
 @media (width >= 90rem) {
   .app-scale {
-    width: var(--container-shell);
+    /* 1600 = 1440 / 0.9, i.e. the design canvas plus 10% headroom, so
+       everything renders ~10% smaller than a 1:1 mapping would give and the
+       full hero band (including the BIO card) fits a typical viewport height.
+       Widening the canvas rather than lowering the zoom keeps full-bleed
+       elements reaching the viewport edges instead of leaving 10% empty bars;
+       the extra 160px lands as outer gutter around the 1440-max `shell`.
+
+       MUST stay in sync with the divisor in APP_SCALE_SCRIPT (layout.tsx). */
+    width: 1600px;
     margin-inline: auto;
     zoom: var(--app-scale, 1);
   }

@@ -84,8 +84,21 @@ export const metadata: Metadata = {
 };
 
 /**
- * Sets `--app-scale` to viewport / 1440 so the page can scale proportionally
- * above the design width instead of reflowing (see `.app-scale` in globals.css).
+ * Sets `--app-scale` to viewport / 1600 so the page scales proportionally above
+ * the design width instead of reflowing (see `.app-scale` in globals.css).
+ *
+ * The width divisor is 1600, not the 1440 design width: 1440 / 0.9 = 1600, which
+ * renders everything ~10% smaller. It MUST match `width` on `.app-scale`.
+ *
+ * The scale is then capped by HEIGHT as well, so the hero band — whose bottom
+ * edge is the BIO card's bottom edge — always fits the viewport without
+ * scrolling, on any screen. 800 is the 793px band plus a few px of headroom.
+ * Width alone was not enough: hero height scales with width, so a wide-but-short
+ * window still clipped the BIO card.
+ *
+ * When the height cap wins, the canvas is narrower than the viewport and leaves
+ * gutters. They are invisible in practice because <body> is already
+ * --color-bg, the same colour the design's own page background uses.
  *
  * Inline and in <head> so it runs before first paint — a client component would
  * render the unscaled 1440 canvas for a frame first. CSS cannot compute this:
@@ -104,7 +117,8 @@ export const metadata: Metadata = {
 const APP_SCALE_SCRIPT = `(function(){
 var d=document.documentElement;
 d.style.scrollbarGutter='stable';
-function s(){var w=d.clientWidth;d.style.setProperty('--app-scale',w>=1440?String(w/1440):'1');}
+function s(){var w=d.clientWidth,h=d.clientHeight;
+d.style.setProperty('--app-scale',w>=1440?String(Math.min(w/1600,h/800)):'1');}
 s();
 addEventListener('resize',s,{passive:true});
 addEventListener('DOMContentLoaded',s);

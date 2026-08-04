@@ -75,12 +75,20 @@ export function Hero() {
             `object-top` because the design shows the image's full height with
             its top edge at y=1. Cover-cropping from the centre at viewports
             wider than 1440 pulls the framing upward and loses the top. */}
+        {/* `unoptimized` deliberately. The scaled canvas is 1600 CSS px wide but
+            renders at the full viewport, and the browser resolves `sizes`
+            against the UNZOOMED layout — so it kept picking a variant far below
+            the rendered size (1436px, then 1795px even when asked for 3200) and
+            upscaling it, visibly softening the LCP image. The source is a 52KB
+            WebP at 2154x1198, which is smaller than most variants the optimizer
+            would emit, so serving it verbatim is both sharper and lighter than
+            any resizing. Nothing to gain from the optimizer here. */}
         <Image
           src="/assets/hero/hero-cover.webp"
           alt=""
           fill
           priority
-          sizes="100vw"
+          unoptimized
           className="object-cover object-top lg:translate-x-[10.5%]"
         />
         <LayeredWordmark />
