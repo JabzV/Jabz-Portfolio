@@ -426,3 +426,60 @@
     opacity: 0;
   }
 }
+
+/* --- Boot completion -------------------------------------------------------
+   The reveal: a bright flash, then the panel collapses to a horizontal line
+   and vanishes — a CRT powering down rather than a plain fade. */
+
+@keyframes boot-flash {
+  0% {
+    opacity: 0;
+  }
+  22% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes boot-collapse {
+  0% {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+  62% {
+    clip-path: inset(47% 0 47% 0);
+    opacity: 1;
+  }
+  100% {
+    clip-path: inset(50% 0 50% 0);
+    opacity: 0;
+  }
+}
+
+/* The status line snapping to its completed state. */
+@keyframes boot-complete-text {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No collapse or flash — just get out of the way. */
+  .boot-panel[data-phase="complete"] {
+    animation: boot-dismiss 0.35s linear forwards !important;
+  }
+  .boot-flash {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+  .boot-complete-text {
+    animation: none !important;
+  }
+}
