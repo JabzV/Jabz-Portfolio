@@ -27,7 +27,7 @@ import { Footer } from "@/components/sections/Footer";
  */
 export default function Home() {
   return (
-    <div className="relative flex min-h-full flex-col">
+    <div className="app-scale relative flex min-h-full flex-col">
       <header>
         <HeroNav />
       </header>

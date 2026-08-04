@@ -13,10 +13,14 @@ import { heroCopy, site, social } from "@/data/site";
  * Structure (one markup, two compositions):
  *
  *  - `lg`+  the designed composition. The red panel is the only in-flow child and
- *           it carries the 801px design height, so the section is sized by real
- *           content, not by an absolute canvas. The cover image is pinned behind
- *           it (`inset-0`) and every remaining piece is layered decoration or a
+ *           it carries the band height, so the section is sized by real content,
+ *           not by an absolute canvas. The cover image is pinned behind it
+ *           (`inset-0`) and every remaining piece is layered decoration or a
  *           free-floating text block pinned over the cover.
+ *           Height is 793px — the design's 801 less 1%, per an explicit request.
+ *           The panel's inner coordinates are still 801-based, so the 8px comes
+ *           off the bottom margin; the lowest element (the glyph trio at
+ *           746 + 42 = 788) still clears it.
  *  - `<lg`  a flex column: cover image (aspect-locked), red panel, quotes,
  *           BIO card, social rail. Purely decorative layers drop out.
  *
@@ -28,8 +32,11 @@ import { heroCopy, site, social } from "@/data/site";
  * wherever a 1440-based `left` would fall off a 1024px viewport; vertical
  * coordinates hold unchanged at `lg` because the section height does.
  *
- * DEFECT 6: the Figma cover sits at `left: 216px` with width 1440 inside a 1440
- * frame, overflowing by 216px. Treated as a mistake — pinned to `left: 0`.
+ * DEFECT 6, resolved: the Figma cover sits at `left: 216px` with width 1440
+ * inside a 1440 frame. This was first read as a mistake and pinned to `left: 0`,
+ * which was wrong — the offset is deliberate, and the overflow is meant to be
+ * clipped. The cover is now offset, tuned to put the helmet at 57% of frame
+ * width. See the note on the <Image> itself.
  */
 export function Hero() {
   const [jobs, ford] = heroCopy.quotes;
@@ -41,7 +48,7 @@ export function Hero() {
     >
       {/* Plane 1 — cover image, and the wordmark stack that sits on top of it but
           under the red panel (the design's paint order). */}
-      <div className="relative aspect-[1440/801] w-full overflow-hidden lg:absolute lg:inset-0 lg:z-0 lg:aspect-auto">
+      <div className="relative aspect-[1440/793] w-full overflow-hidden lg:absolute lg:inset-0 lg:z-0 lg:aspect-auto">
         {/* The LCP image. `fill` rather than width/height: at lg+ this plane is
             `absolute inset-0` and its height is pinned to the red panel, so the
             render box (viewport x 801) never matches the intrinsic 2154x1198
@@ -52,13 +59,18 @@ export function Hero() {
             dimensions. The PNG mattered because public/ is served verbatim and
             the optimizer had to decode 4MB per cold-cache variant.
 
-            Framing reproduces the Figma, which places this image at
-            `left: 216px` in a 1440 frame — a 15% rightward offset, NOT the
-            mistake it was first read as. The uncovered 15% on the left sits
-            behind the red panel (453/1440 = 31.5% wide), so nothing shows
-            through; the right 15% overflows and is clipped by the parent.
-            Offset is lg+ only — below lg the panel stacks underneath rather
-            than overlapping, so the gap would be visible.
+            The Figma places this image at `left: 216px` in a 1440 frame (15%),
+            which is a real offset and not the mistake it was first read as.
+            Tuned to 10.5% so the helmet lands at 57% of frame width: the helmet
+            sits at 46.5% within the image, and because the translate is a
+            percentage of the image's own width — which equals the container
+            width at lg — on-screen position is just `translate% + 46.5%`,
+            independent of viewport. 10.5 + 46.5 = 57.
+            The uncovered strip on the left sits behind the red panel
+            (453/1440 = 31.5% wide), so nothing shows through; the right side
+            overflows and is clipped by the parent. Offset is lg+ only — below
+            lg the panel stacks underneath rather than overlapping, so the gap
+            would be visible.
 
             `object-top` because the design shows the image's full height with
             its top edge at y=1. Cover-cropping from the centre at viewports
@@ -69,7 +81,7 @@ export function Hero() {
           fill
           priority
           sizes="100vw"
-          className="object-cover object-top lg:translate-x-[15%]"
+          className="object-cover object-top lg:translate-x-[10.5%]"
         />
         <LayeredWordmark />
       </div>
@@ -77,7 +89,7 @@ export function Hero() {
       {/* Plane 2 — the red panel. Full-width block below `lg`; the designed
           453×801 slab flush left at `lg`+. Its children flow in reading order
           below `lg` and take their design coordinates at `lg`+. */}
-      <div className="bg-accent relative z-10 flex w-full flex-col gap-8 px-5 py-8 sm:px-8 lg:block lg:h-[801px] lg:w-[453px] lg:gap-0 lg:p-0">
+      <div className="bg-accent relative z-10 flex w-full flex-col gap-8 px-5 py-8 sm:px-8 lg:block lg:h-[793px] lg:w-[453px] lg:gap-0 lg:p-0">
         {/* Hero copyright (22:4371) + light-mode link (22:4361).
             DEFECT 5: this copyright also exists in the footer. Kept — different
             size (12px) and role (a print-style credit on the poster). */}

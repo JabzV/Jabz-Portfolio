@@ -83,12 +83,48 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Sets `--app-scale` to viewport / 1440 so the page can scale proportionally
+ * above the design width instead of reflowing (see `.app-scale` in globals.css).
+ *
+ * Inline and in <head> so it runs before first paint — a client component would
+ * render the unscaled 1440 canvas for a frame first. CSS cannot compute this:
+ * `zoom` needs a unitless ratio and calc() cannot divide a length by a length.
+ *
+ * `clientWidth`, not `innerWidth`, so the scrollbar is excluded — otherwise the
+ * canvas is scaled slightly too wide and induces a horizontal scrollbar.
+ *
+ * It re-measures after layout as well as before paint. In <head> there is no
+ * body and no layout yet, so clientWidth reports the full viewport regardless of
+ * `scrollbar-gutter`, which yields a canvas ~15px too wide and a horizontal
+ * scrollbar. The first-paint value is therefore treated as an estimate and
+ * corrected on DOMContentLoaded/load and by a ResizeObserver; the delta is under
+ * 1%, so the correction is imperceptible while removing the overflow.
+ */
+const APP_SCALE_SCRIPT = `(function(){
+var d=document.documentElement;
+d.style.scrollbarGutter='stable';
+function s(){var w=d.clientWidth;d.style.setProperty('--app-scale',w>=1440?String(w/1440):'1');}
+s();
+addEventListener('resize',s,{passive:true});
+addEventListener('DOMContentLoaded',s);
+addEventListener('load',s);
+if(window.ResizeObserver)new ResizeObserver(s).observe(d);
+})();`;
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      /* The inline script below writes `--app-scale` to this element's style
+         attribute before React hydrates, which React would otherwise report as
+         a server/client attribute mismatch. Scoped to <html> only. */
+      suppressHydrationWarning
       className={`${sdDystopian.variable} ${glitchGoblin.variable} ${generalSans.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: APP_SCALE_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

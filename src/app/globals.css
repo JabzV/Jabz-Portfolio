@@ -214,6 +214,14 @@
      @layer utilities) still wins. --leading-katakana{,-tight} are unaffected. */
   html {
     line-height: normal;
+
+    /* Reserve the scrollbar gutter unconditionally. Without it, the inline
+       scale script measures clientWidth before the page is tall enough to have
+       a scrollbar, sizes the canvas to the full viewport, and then the
+       scrollbar appears and takes ~15px — leaving the canvas overflowing
+       horizontally. A stable gutter makes clientWidth identical before and
+       after layout, so the computed scale is right the first time. */
+    scrollbar-gutter: stable;
   }
 
   body {
@@ -260,6 +268,31 @@
   width: 100%;
   max-width: var(--container-shell);
   padding-inline: var(--shell-gutter-raw);
+}
+
+/* ============================================================================
+   PROPORTIONAL SCALING ABOVE THE DESIGN WIDTH
+
+   At and above 1440px the page does NOT reflow. The layout is locked to the
+   1440px design canvas and scaled by viewport/1440, so a 2560px screen shows
+   the identical composition at identical proportions, just larger. Below 1440
+   the responsive rules in docs/design/RESPONSIVE.md still apply.
+
+   `zoom` rather than `transform: scale()`: zoom participates in layout, so the
+   document's scroll height scales with it. `transform` would leave the page
+   reporting its unscaled height and need a compensating spacer.
+
+   `--app-scale` is set by a blocking inline script in <head> (see layout.tsx),
+   because CSS cannot divide a length by a length to produce the unitless ratio
+   `zoom` requires. It defaults to 1, so with JS disabled the page degrades to a
+   centred 1440 canvas rather than breaking.
+   ========================================================================== */
+@media (width >= 90rem) {
+  .app-scale {
+    width: var(--container-shell);
+    margin-inline: auto;
+    zoom: var(--app-scale, 1);
+  }
 }
 
 /* Explicit focus ring for elements that need it on a child/wrapper, or where
