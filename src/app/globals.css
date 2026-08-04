@@ -583,10 +583,14 @@
   }
 }
 
-/* The noise floor is present during loading too, so the surface never changes
-   between phases. On reveal it rises to full — the signal dropping out — before
-   the whole panel thins away. Without this the reveal jumped from a near-black
-   background to a bright noise field. */
+/* The noise element exists during loading (at --boot-noise-floor, 0 by default,
+   i.e. the original flat background) so that it and its jitter are already live
+   when the reveal starts. On reveal it rises to full — the signal dropping out —
+   before the whole panel thins away.
+
+   The reveal no longer jumps to a bright noise field because the tile itself is
+   generated from the page background colour, so full-opacity static reads as
+   that same surface agitated. */
 @keyframes boot-static-rise {
   from {
     opacity: var(--boot-noise-floor);

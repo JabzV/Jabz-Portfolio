@@ -110,11 +110,16 @@ export function BootSequence() {
       style={
         {
           animation: "boot-dismiss 3.4s ease-in forwards",
-          // How much noise sits over the loading background. High enough to read
-          // as a live CRT surface, low enough to keep the text legible — and it
-          // is what makes the reveal seamless, since the static then only has to
-          // rise rather than appear.
-          "--boot-noise-floor": "0.22",
+          // The loading screen uses the ORIGINAL background — flat bg-bg plus
+          // scanlines — so this floor is 0. An earlier attempt raised it to 0.22
+          // to bridge the phases, but that changed the loading design rather
+          // than fixing the cause.
+          //
+          // Continuity comes from the noise tile itself instead: it is generated
+          // from #11141c, the page background, so the static is that surface
+          // agitated rather than a brighter grey field arriving on top of it.
+          // Raise this only if you want visible grain while loading.
+          "--boot-noise-floor": "0",
         } as React.CSSProperties
       }
     >
@@ -153,9 +158,13 @@ export function BootSequence() {
             that would not match, wasting the fetch. */}
         <link rel="preload" as="image" href={STATIC_TILE} />
 
-        {/* Noise floor. Mounted in BOTH phases so the static never appears out of
-            nowhere: during loading it sits at --boot-noise-floor, and on reveal it
-            rises to full as the signal drops out.
+        {/* Broadcast noise. Mounted in both phases (at --boot-noise-floor, 0 while
+            loading) purely so the element and its jitter animation are already
+            running when the reveal starts.
+
+            The tile is generated from the page background colour, so at full
+            opacity this reads as the loading surface degrading rather than a new
+            layer appearing over it.
 
             The jitter lives on the INNER div whose style never changes, so React
             does not restart the animation at the phase change — moving it to this
