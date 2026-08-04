@@ -460,10 +460,16 @@
   .boot-panel[data-phase="complete"] {
     animation: boot-dismiss 0.35s linear forwards !important;
   }
-  .boot-static,
   .boot-roll {
     animation: none !important;
     opacity: 0 !important;
+  }
+  /* Keep the noise floor, drop its motion. */
+  .boot-static {
+    animation: none !important;
+  }
+  .boot-static > * {
+    animation: none !important;
   }
   .boot-flash {
     animation: none !important;
@@ -574,5 +580,18 @@
   }
   100% {
     transform: scaleY(1);
+  }
+}
+
+/* The noise floor is present during loading too, so the surface never changes
+   between phases. On reveal it rises to full — the signal dropping out — before
+   the whole panel thins away. Without this the reveal jumped from a near-black
+   background to a bright noise field. */
+@keyframes boot-static-rise {
+  from {
+    opacity: var(--boot-noise-floor);
+  }
+  to {
+    opacity: 1;
   }
 }

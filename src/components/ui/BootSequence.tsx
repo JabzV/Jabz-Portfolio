@@ -107,38 +107,81 @@ export function BootSequence() {
     <div
       aria-hidden="true"
       className="fixed inset-0 z-[100] overflow-hidden"
-      style={{ animation: "boot-dismiss 3.4s ease-in forwards" }}
+      style={
+        {
+          animation: "boot-dismiss 3.4s ease-in forwards",
+          // How much noise sits over the loading background. High enough to read
+          // as a live CRT surface, low enough to keep the text legible — and it
+          // is what makes the reveal seamless, since the static then only has to
+          // rise rather than appear.
+          "--boot-noise-floor": "0.22",
+        } as React.CSSProperties
+      }
     >
       <div
         data-phase={phase}
-        // Opaque while loading; transparent during the reveal so the page shows
-        // through as the static thins out. Keeping bg-bg here would mean fading
-        // noise against a solid panel and then cutting to the site.
-        className={`boot-panel absolute inset-0 grid place-items-center ${complete ? "" : "bg-bg"}`}
+        // `bg-bg` in BOTH phases. The reveal previously dropped it so the page
+        // showed through the noise, but that also meant the surface jumped from
+        // near-black to a bright noise field at the phase change. Keeping the
+        // background and fading the whole panel keeps one continuous surface and
+        // still reveals the page, because the panel itself thins away.
+        className="boot-panel bg-bg absolute inset-0 grid place-items-center"
+        style={
+          complete
+            ? {
+                animation: [
+                  `boot-signal-lock ${COMPLETE_MS}ms ease-in forwards`,
+                  `boot-vsync ${COMPLETE_MS}ms ease-out forwards`,
+                ].join(", "),
+              }
+            : undefined
+        }
       >
-        {/* Scanlines. A 3px repeat reads as a CRT and survives page zoom. */}
-        {!complete && (
+        {/* Scanlines. A 3px repeat reads as a CRT and survives page zoom.
+            Present in both phases — part of the surface, not of either state. */}
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.14]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(to bottom, rgb(255 255 255 / 0.5) 0px, rgb(255 255 255 / 0.5) 1px, transparent 1px, transparent 3px)",
+          }}
+        />
+
+        {/* Preloads the noise tile. A preload link rather than a hidden <img>:
+            React 19 hoists it to <head>, and it keeps the exact URL the CSS
+            `url()` references — next/image would rewrite it to an optimizer URL
+            that would not match, wasting the fetch. */}
+        <link rel="preload" as="image" href={STATIC_TILE} />
+
+        {/* Noise floor. Mounted in BOTH phases so the static never appears out of
+            nowhere: during loading it sits at --boot-noise-floor, and on reveal it
+            rises to full as the signal drops out.
+
+            The jitter lives on the INNER div whose style never changes, so React
+            does not restart the animation at the phase change — moving it to this
+            wrapper would visibly reset the noise pattern mid-reveal. */}
+        <div
+          className="boot-static pointer-events-none absolute inset-0 overflow-hidden"
+          style={
+            complete
+              ? { animation: `boot-static-rise 260ms ease-out forwards` }
+              : { opacity: "var(--boot-noise-floor)" }
+          }
+        >
           <div
-            className="pointer-events-none absolute inset-0 opacity-[0.14]"
+            className="absolute inset-0"
             style={{
-              backgroundImage:
-                "repeating-linear-gradient(to bottom, rgb(255 255 255 / 0.5) 0px, rgb(255 255 255 / 0.5) 1px, transparent 1px, transparent 3px)",
+              backgroundImage: `url(${STATIC_TILE})`,
+              backgroundRepeat: "repeat",
+              animation: "boot-static-jitter 700ms steps(1, end) infinite",
             }}
           />
-        )}
+        </div>
 
-        {/* Warms the noise tile into cache during loading, so the reveal never
-            waits on a network request at the moment it needs it. A preload link
-            rather than a hidden <img>: React 19 hoists it to <head>, and it
-            keeps the exact URL the CSS `url()` references — next/image would
-            rewrite it to an optimizer URL that would not match, so the fetch
-            would be wasted and the tile requested again at reveal time. */}
-        {!complete && <link rel="preload" as="image" href={STATIC_TILE} />}
-
-        {/* Travelling accent band. `w-full` and an explicit `top` are
-            load-bearing: for an absolutely positioned child of a grid with
+        {/* Travelling accent band — loading only. `w-full` and an explicit `top`
+            are load-bearing: for an absolutely positioned child of a grid with
             `place-items-center`, those alignment properties collapse `inset-x-0`
-            to fit-content and centre it. Stops once loading ends. */}
+            to fit-content and centre it. */}
         {!complete && (
           <div
             className="from-accent/0 via-accent/25 to-accent/0 pointer-events-none absolute top-0 left-0 h-1/3 w-full bg-gradient-to-b"
@@ -146,31 +189,12 @@ export function BootSequence() {
           />
         )}
 
-        {/* --- Signal lock: broadcast static thinning out to reveal the page --- */}
+        {/* Rolling sync band — reveal only. */}
         {complete && (
           <div
-            className="boot-static pointer-events-none absolute inset-0 overflow-hidden"
-            style={{
-              animation: [
-                `boot-signal-lock ${COMPLETE_MS}ms ease-in forwards`,
-                `boot-vsync ${COMPLETE_MS}ms ease-out forwards`,
-              ].join(", "),
-            }}
-          >
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url(${STATIC_TILE})`,
-                backgroundRepeat: "repeat",
-                animation: "boot-static-jitter 700ms steps(1, end) infinite",
-              }}
-            />
-            {/* Rolling sync band. */}
-            <div
-              className="boot-roll from-display/0 via-display/25 to-display/0 absolute top-0 left-0 h-[14%] w-full bg-gradient-to-b"
-              style={{ animation: `boot-roll ${COMPLETE_MS}ms linear forwards` }}
-            />
-          </div>
+            className="boot-roll from-display/0 via-display/25 to-display/0 pointer-events-none absolute top-0 left-0 h-[14%] w-full bg-gradient-to-b"
+            style={{ animation: `boot-roll ${COMPLETE_MS}ms linear forwards` }}
+          />
         )}
 
         {/* Loading UI. Removed the moment the reveal starts: the signal drops to
