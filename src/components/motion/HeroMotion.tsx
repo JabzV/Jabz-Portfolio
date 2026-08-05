@@ -218,6 +218,36 @@ export function HeroMotion() {
         const COVER_X = 14;
         const COVER_Y = 8;
 
+        /**
+         * Red panel: a light that tracks the pointer across it, plus a slow drift
+         * on the wireframe globe so the panel has a foreground and a background
+         * rather than being one flat plane.
+         *
+         * The light is driven off the PANEL's own rect, not the plane's, so it
+         * sits under the pointer rather than at a scaled-down proportion of it.
+         */
+        const panel = section.querySelector<HTMLElement>("[data-hero-panel]");
+        const panelLight = panel?.querySelector<HTMLElement>("[data-hero-panel-light]");
+        const globe = section.querySelector<HTMLElement>("[data-hero-globe]");
+
+        const panelTo = panelLight
+          ? {
+              x: gsap.quickTo(panelLight, "x", { duration: 0.45, ease: "power3" }),
+              y: gsap.quickTo(panelLight, "y", { duration: 0.45, ease: "power3" }),
+            }
+          : null;
+        const globeTo = globe
+          ? {
+              x: gsap.quickTo(globe, "x", { duration: 0.9, ease: "power3" }),
+              y: gsap.quickTo(globe, "y", { duration: 0.9, ease: "power3" }),
+            }
+          : null;
+        const GLOBE_TRAVEL = 10;
+
+        let panelRect = panel?.getBoundingClientRect() ?? null;
+        let panelW = panel?.offsetWidth ?? 0;
+        let panelH = panel?.offsetHeight ?? 0;
+
         // Cached OUTSIDE the pointer handler. Reading these per-move is textbook
         // layout thrash.
         let rect = plane.getBoundingClientRect();
@@ -232,6 +262,11 @@ export function HeroMotion() {
           // Centre of the wordmark itself, so the parallax responds to the
           // pointer's position relative to THAT TEXT rather than to the band.
           wmCentre = wr ? wr.left + wr.width / 2 : rect.left + rect.width / 2;
+          if (panel) {
+            panelRect = panel.getBoundingClientRect();
+            panelW = panel.offsetWidth;
+            panelH = panel.offsetHeight;
+          }
         };
         measure();
 
@@ -272,6 +307,20 @@ export function HeroMotion() {
             coverTo.x(-cx * COVER_X);
             coverTo.y(-cy * COVER_Y);
           }
+
+          // Panel light + globe drift. Same ratio trick as everything else, so
+          // the `.app-scale` zoom cancels out; and same `entranceDone` gate,
+          // since the entrance owns the globe's transform via [data-hero-item].
+          if (panelRect) {
+            const px = (e.clientX - panelRect.left) / panelRect.width;
+            const py = (e.clientY - panelRect.top) / panelRect.height;
+            panelTo?.x(px * panelW);
+            panelTo?.y(py * panelH);
+            if (entranceDone && globeTo) {
+              globeTo.x(-(px - 0.5) * 2 * GLOBE_TRAVEL);
+              globeTo.y(-(py - 0.5) * 2 * GLOBE_TRAVEL);
+            }
+          }
         };
 
         let raf = 0;
@@ -292,11 +341,24 @@ export function HeroMotion() {
             gsap.to(layers, { x: 0, duration: 0.7, ease: "power3.out" });
           }
           if (cover) gsap.to(cover, { x: 0, y: 0, duration: 0.9, ease: "power3.out" });
+          if (globe) gsap.to(globe, { x: 0, y: 0, duration: 0.9, ease: "power3.out" });
+        };
+
+        // The panel light gets its own enter/leave: the section covers the whole
+        // band, and a highlight that stays lit while the pointer is off over the
+        // photograph would read as a stuck artifact rather than a tracked light.
+        const showPanel = () => {
+          if (panelLight) gsap.to(panelLight, { opacity: 0.45, duration: 0.35 });
+        };
+        const hidePanel = () => {
+          if (panelLight) gsap.to(panelLight, { opacity: 0, duration: 0.45 });
         };
 
         section.addEventListener("pointerenter", measure);
         section.addEventListener("pointerenter", show);
         section.addEventListener("pointerleave", hide);
+        panel?.addEventListener("pointerenter", showPanel);
+        panel?.addEventListener("pointerleave", hidePanel);
         section.addEventListener("pointermove", onMove, { passive: true });
         window.addEventListener("scroll", onScrollOrResize, { passive: true });
         window.addEventListener("resize", onScrollOrResize, { passive: true });
@@ -306,6 +368,8 @@ export function HeroMotion() {
           section.removeEventListener("pointerenter", measure);
           section.removeEventListener("pointerenter", show);
           section.removeEventListener("pointerleave", hide);
+          panel?.removeEventListener("pointerenter", showPanel);
+          panel?.removeEventListener("pointerleave", hidePanel);
           section.removeEventListener("pointermove", onMove);
           window.removeEventListener("scroll", onScrollOrResize);
           window.removeEventListener("resize", onScrollOrResize);

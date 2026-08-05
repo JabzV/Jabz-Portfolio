@@ -5,6 +5,7 @@ import { HeroMotion } from "@/components/motion/HeroMotion";
 import { BioCard } from "@/components/sections/hero/BioCard";
 import { HeroEdgeLight } from "@/components/sections/hero/HeroEdgeLight";
 import { HeroGlow } from "@/components/sections/hero/HeroGlow";
+import { HeroPanelLight } from "@/components/sections/hero/HeroPanelLight";
 import { KatakanaColumn } from "@/components/sections/hero/KatakanaColumn";
 import { LayeredWordmark } from "@/components/sections/hero/LayeredWordmark";
 import { QuoteBlock } from "@/components/sections/hero/QuoteBlock";
@@ -118,7 +119,11 @@ export function Hero() {
       {/* Plane 2 — the red panel. Full-width block below `lg`; the designed
           453×801 slab flush left at `lg`+. Its children flow in reading order
           below `lg` and take their design coordinates at `lg`+. */}
-      <div className="bg-accent relative z-10 flex w-full flex-col gap-8 px-5 py-8 sm:px-8 lg:block lg:h-[793px] lg:w-[453px] lg:gap-0 lg:p-0">
+      <div
+        data-hero-panel
+        className="group/panel bg-accent relative z-10 flex w-full flex-col gap-8 overflow-hidden px-5 py-8 sm:px-8 lg:block lg:h-[793px] lg:w-[453px] lg:gap-0 lg:p-0"
+      >
+        <HeroPanelLight />
         {/* Hero copyright (22:4371) + light-mode link (22:4361).
             DEFECT 5: this copyright also exists in the footer. Kept — different
             size (12px) and role (a print-style credit on the poster). */}
@@ -140,12 +145,13 @@ export function Hero() {
             design's 85px-style pitch here is simply a zero gap. */}
         <div data-hero-item className="flex items-start lg:absolute lg:top-[33px] lg:left-8">
           <Image
+            data-hero-globe
             src="/assets/hero/hero-image-2.png"
             alt=""
             width={272}
             height={275}
             aria-hidden="true"
-            className="h-[275px] w-[272px] max-w-none shrink-0 object-cover"
+            className="h-[275px] w-[272px] max-w-none shrink-0 object-cover transition-[filter] duration-500 group-hover/panel:brightness-150"
           />
           <div className="hidden shrink-0 gap-2.5 pt-[52px] md:flex">
             <KatakanaColumn text={site.katakana.name} className="leading-katakana-tight pt-1" />
@@ -162,7 +168,11 @@ export function Hero() {
               as motion than sliding the whole block — which reads as the panel
               moving rather than the words arriving. */}
           {site.headline.map((line) => (
-            <span key={line} data-hero-line className="block">
+            <span
+              key={line}
+              data-hero-line
+              className="hover:text-shadow-glow-link block transition-[text-shadow,translate] duration-(--duration-hover) motion-safe:hover:translate-x-2"
+            >
               {line}
             </span>
           ))}
@@ -180,7 +190,7 @@ export function Hero() {
           aria-hidden="true"
           width={379}
           height={33}
-          className="h-[33px] w-full max-w-[379px] object-cover lg:absolute lg:top-[669px] lg:left-[37px]"
+          className="h-[33px] w-full max-w-[379px] object-cover transition-[filter] duration-500 group-hover/panel:brightness-125 lg:absolute lg:top-[669px] lg:left-[37px]"
         />
 
         {/* `resume.href` is null (U6): a button, not an <a> with no target — and
