@@ -372,8 +372,18 @@ export function HeroMotion() {
         // The panel light gets its own enter/leave: the section covers the whole
         // band, and a highlight that stays lit while the pointer is off over the
         // photograph would read as a stuck artifact rather than a tracked light.
+        /**
+         * 0.32 is a contrast ceiling, not a taste call. The light paints OVER the
+         * panel's content, so at its hottest point it brightens the backdrop the
+         * white 14px WARNING text sits on. `plus-lighter` adds rather than mixes,
+         * so composited against #9c2222:
+         *   0.45 -> rgb(225,63,59) -> 4.22:1  FAILS AA for normal text
+         *   0.32 -> rgb(205,54,52) -> 5.03:1  passes with margin
+         * Raise this and the copy stops being legible exactly where the reader is
+         * pointing.
+         */
         const showPanel = () => {
-          if (panelLight) gsap.to(panelLight, { opacity: 0.45, duration: 0.35 });
+          if (panelLight) gsap.to(panelLight, { opacity: 0.32, duration: 0.35 });
         };
         const hidePanel = () => {
           if (panelLight) gsap.to(panelLight, { opacity: 0, duration: 0.45 });

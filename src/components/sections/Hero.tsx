@@ -123,7 +123,6 @@ export function Hero() {
         data-hero-panel
         className="bg-accent relative z-10 flex w-full flex-col gap-8 overflow-hidden px-5 py-8 sm:px-8 lg:block lg:h-[793px] lg:w-[453px] lg:gap-0 lg:p-0"
       >
-        <HeroPanelLight />
         {/* Hero copyright (22:4371) + light-mode link (22:4361).
             DEFECT 5: this copyright also exists in the footer. Kept — different
             size (12px) and role (a print-style credit on the poster). */}
@@ -235,6 +234,14 @@ export function Hero() {
             className="absolute top-[746px] left-[374px] h-[42px] w-[71px] rotate-180"
           />
         </span>
+
+        {/* LAST child on purpose. The panel's children are painted in DOM order,
+            so mounting this first put the light UNDERNEATH the globe, stripe and
+            glyphs — a light that passes behind the things it is lighting reads as
+            a shape sliding around under the surface, not as illumination. Last
+            means it falls across all of them. `pointer-events-none` keeps it off
+            the résumé button and the light-mode link. */}
+        <HeroPanelLight />
       </div>
 
       {/* Plane 3 — free-floating text over the cover. */}
