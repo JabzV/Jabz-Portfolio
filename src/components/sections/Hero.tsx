@@ -121,7 +121,7 @@ export function Hero() {
           below `lg` and take their design coordinates at `lg`+. */}
       <div
         data-hero-panel
-        className="group/panel bg-accent relative z-10 flex w-full flex-col gap-8 overflow-hidden px-5 py-8 sm:px-8 lg:block lg:h-[793px] lg:w-[453px] lg:gap-0 lg:p-0"
+        className="bg-accent relative z-10 flex w-full flex-col gap-8 overflow-hidden px-5 py-8 sm:px-8 lg:block lg:h-[793px] lg:w-[453px] lg:gap-0 lg:p-0"
       >
         <HeroPanelLight />
         {/* Hero copyright (22:4371) + light-mode link (22:4361).
@@ -151,7 +151,7 @@ export function Hero() {
             width={272}
             height={275}
             aria-hidden="true"
-            className="h-[275px] w-[272px] max-w-none shrink-0 object-cover transition-[filter] duration-500 group-hover/panel:brightness-150"
+            className="h-[275px] w-[272px] max-w-none shrink-0 object-cover"
           />
           <div className="hidden shrink-0 gap-2.5 pt-[52px] md:flex">
             <KatakanaColumn text={site.katakana.name} className="leading-katakana-tight pt-1" />
@@ -185,12 +185,13 @@ export function Hero() {
         {/* Hazard stripe rule (21:4356) */}
         <Image
           data-hero-item
+          data-hero-stripe
           src="/assets/hero/hero-image-3.png"
           alt=""
           aria-hidden="true"
           width={379}
           height={33}
-          className="h-[33px] w-full max-w-[379px] object-cover transition-[filter] duration-500 group-hover/panel:brightness-125 lg:absolute lg:top-[669px] lg:left-[37px]"
+          className="h-[33px] w-full max-w-[379px] object-cover lg:absolute lg:top-[669px] lg:left-[37px]"
         />
 
         {/* `resume.href` is null (U6): a button, not an <a> with no target — and

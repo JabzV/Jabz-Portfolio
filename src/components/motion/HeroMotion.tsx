@@ -242,7 +242,25 @@ export function HeroMotion() {
               y: gsap.quickTo(globe, "y", { duration: 0.9, ease: "power3" }),
             }
           : null;
+
+        /**
+         * The globe and hazard stripe respond with MOVEMENT ONLY — no brightness
+         * or colour shift. Both are white line art on flat red, and altering their
+         * tone reads as the artwork itself changing rather than as light falling
+         * across it, which is the opposite of what the panel light is doing.
+         *
+         * The stripe travels less than the globe, so the two drift apart slightly
+         * and the panel gains a shallow sense of layering.
+         */
+        const stripe = section.querySelector<HTMLElement>("[data-hero-stripe]");
+        const stripeTo = stripe
+          ? {
+              x: gsap.quickTo(stripe, "x", { duration: 1, ease: "power3" }),
+              y: gsap.quickTo(stripe, "y", { duration: 1, ease: "power3" }),
+            }
+          : null;
         const GLOBE_TRAVEL = 10;
+        const STRIPE_TRAVEL = 5;
 
         let panelRect = panel?.getBoundingClientRect() ?? null;
         let panelW = panel?.offsetWidth ?? 0;
@@ -316,9 +334,13 @@ export function HeroMotion() {
             const py = (e.clientY - panelRect.top) / panelRect.height;
             panelTo?.x(px * panelW);
             panelTo?.y(py * panelH);
-            if (entranceDone && globeTo) {
-              globeTo.x(-(px - 0.5) * 2 * GLOBE_TRAVEL);
-              globeTo.y(-(py - 0.5) * 2 * GLOBE_TRAVEL);
+            if (entranceDone) {
+              const gx = (px - 0.5) * 2;
+              const gy = (py - 0.5) * 2;
+              globeTo?.x(-gx * GLOBE_TRAVEL);
+              globeTo?.y(-gy * GLOBE_TRAVEL);
+              stripeTo?.x(-gx * STRIPE_TRAVEL);
+              stripeTo?.y(-gy * STRIPE_TRAVEL);
             }
           }
         };
@@ -341,7 +363,10 @@ export function HeroMotion() {
             gsap.to(layers, { x: 0, duration: 0.7, ease: "power3.out" });
           }
           if (cover) gsap.to(cover, { x: 0, y: 0, duration: 0.9, ease: "power3.out" });
-          if (globe) gsap.to(globe, { x: 0, y: 0, duration: 0.9, ease: "power3.out" });
+          const panelDrifters = [globe, stripe].filter(Boolean) as HTMLElement[];
+          if (panelDrifters.length) {
+            gsap.to(panelDrifters, { x: 0, y: 0, duration: 0.9, ease: "power3.out" });
+          }
         };
 
         // The panel light gets its own enter/leave: the section covers the whole
