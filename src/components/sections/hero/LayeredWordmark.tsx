@@ -26,6 +26,9 @@ export function LayeredWordmark() {
   return (
     <div
       aria-hidden="true"
+      // HeroMotion measures this box to work out where the pointer sits relative
+      // to the wordmark itself, rather than to the whole hero band.
+      data-hero-wordmark
       className="absolute inset-y-3 left-[35%] hidden md:flex lg:left-[482px]"
     >
       {layers.map((layer) => (

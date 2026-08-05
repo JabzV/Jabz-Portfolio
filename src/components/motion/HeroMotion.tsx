@@ -47,6 +47,12 @@ export function HeroMotion() {
     const mm = gsap.matchMedia();
     let disposed = false;
     let started = false;
+    /**
+     * The entrance owns the wordmark layers' `x` until it finishes. Pointer
+     * parallax writes the same property, so it must stay quiet until then or the
+     * two fight and the layers jitter mid-entrance.
+     */
+    let entranceDone = false;
 
     /* ---------------------------------------------------------------- entrance */
 
@@ -90,6 +96,9 @@ export function HeroMotion() {
 
         const tl = gsap.timeline({
           defaults: { ease: "power2.out", clearProps: "opacity,transform,willChange" },
+          onComplete: () => {
+            entranceDone = true;
+          },
         });
 
         tl.to(cover, { scale: 1, duration: 1.4 }, 0)
@@ -121,7 +130,10 @@ export function HeroMotion() {
          * the animation genuinely did not play.
          */
         const failsafe = window.setTimeout(() => {
+          // `progress()` suppresses callbacks, so onComplete will not fire —
+          // release the parallax by hand or it would stay disabled forever.
           if (tl.progress() < 1) tl.progress(1);
+          entranceDone = true;
         }, 4000);
         return () => window.clearTimeout(failsafe);
       });
@@ -137,7 +149,10 @@ export function HeroMotion() {
     let watchdog = 0;
 
     if (bootRevealed()) {
+      // Reveal already happened before this leaf hydrated: no entrance runs, so
+      // nothing owns the layers' x and parallax is free immediately.
       started = true;
+      entranceDone = true;
     } else {
       disposeReveal = onBootReveal(() => {
         watchdog = window.setTimeout(buildEntrance, REVEAL_DELAY_MS);
@@ -158,16 +173,72 @@ export function HeroMotion() {
         const xTo = gsap.quickTo(scan, "x", { duration: SCAN_LAG, ease: "power3" });
         const yTo = gsap.quickTo(scan, "y", { duration: SCAN_LAG, ease: "power3" });
 
+        /**
+         * Wordmark parallax. Each layer tracks at a different rate, so the stack's
+         * 1.0 / 0.49 / 0.06 alpha relationship finally reads as DEPTH rather than
+         * as three overlapping copies — the fainter layers travel further, which
+         * is how parallax signals distance.
+         */
+        const wordmark = section.querySelector<HTMLElement>("[data-hero-wordmark]");
+        const layers = gsap.utils.toArray<HTMLElement>(
+          "[data-hero-wordmark-layer]",
+          section,
+        );
+        const layerTo = layers.map((l, i) =>
+          gsap.quickTo(l, "x", {
+            // Deeper layers lag slightly more as well as travelling further.
+            duration: 0.55 + i * 0.12,
+            ease: "power3",
+          }),
+        );
+        const LAYER_TRAVEL = [7, 15, 24];
+
+        /**
+         * Anaglyph fringe. The two tinted copies push in OPPOSITE directions, so
+         * the separation grows with distance from centre and collapses to zero at
+         * the middle — the eye reads opposed colour fringes as depth.
+         */
+        const chromaR = section.querySelector<HTMLElement>('[data-hero-chroma="r"]');
+        const chromaC = section.querySelector<HTMLElement>('[data-hero-chroma="c"]');
+        const chroma = [chromaR, chromaC].filter(Boolean) as HTMLElement[];
+        const chromaTo = chroma.map((el, i) => ({
+          // Sign flip between the two copies is what makes it read as separation
+          // rather than as the whole image sliding.
+          sign: i === 0 ? 1 : -1,
+          x: gsap.quickTo(el, "x", { duration: 0.35, ease: "power2" }),
+          y: gsap.quickTo(el, "y", { duration: 0.35, ease: "power2" }),
+          o: gsap.quickTo(el, "opacity", { duration: 0.35, ease: "power2" }),
+        }));
+        /** Kept small on purpose: past ~8px it stops reading as depth and starts
+            reading as a broken image. */
+        const CHROMA_X = 8;
+        const CHROMA_Y = 4;
+        /**
+         * Opacity scales with distance from centre, not just the offset — and that
+         * is load-bearing, not polish. `screen` always ADDS luminance, so a fixed
+         * opacity means the darkest part of a night photograph gets washed out
+         * even at dead centre, where the two copies overlay exactly and there is
+         * no fringe to show for it. Tying opacity to the same magnitude as the
+         * offset means the cost only appears where the effect does.
+         */
+        const CHROMA_MAX = 0.3;
+
         // Cached OUTSIDE the pointer handler. Reading these per-move is textbook
         // layout thrash.
         let rect = plane.getBoundingClientRect();
         let planeW = plane.offsetWidth;
         let planeH = plane.offsetHeight;
+        let wmCentre = 0;
         const measure = () => {
           rect = plane.getBoundingClientRect();
           planeW = plane.offsetWidth;
           planeH = plane.offsetHeight;
+          const wr = wordmark?.getBoundingClientRect();
+          // Centre of the wordmark itself, so the parallax responds to the
+          // pointer's position relative to THAT TEXT rather than to the band.
+          wmCentre = wr ? wr.left + wr.width / 2 : rect.left + rect.width / 2;
         };
+        measure();
 
         const onMove = (e: PointerEvent) => {
           if (e.pointerType === "touch") return;
@@ -180,6 +251,29 @@ export function HeroMotion() {
           const fy = (e.clientY - rect.top) / rect.height;
           xTo(fx * planeW);
           yTo(fy * planeH);
+
+          // Signed −1..1 offset from the wordmark's own centre. Uses the same
+          // visual-px rect as above, so the `.app-scale` zoom cancels out here
+          // too — this is a ratio, not a length.
+          if (entranceDone && layerTo.length) {
+            const wd = gsap.utils.clamp(
+              -1,
+              1,
+              (e.clientX - wmCentre) / (rect.width / 2),
+            );
+            // Negative: the layers drift AWAY from the pointer, which reads as
+            // the type sitting behind the glass rather than following the mouse.
+            layerTo.forEach((set, i) => set(-wd * (LAYER_TRAVEL[i] ?? 7)));
+          }
+
+          const cx = (fx - 0.5) * 2;
+          const cy = (fy - 0.5) * 2;
+          const mag = Math.min(1, Math.hypot(cx, cy));
+          chromaTo.forEach((c) => {
+            c.x(cx * CHROMA_X * c.sign);
+            c.y(cy * CHROMA_Y * c.sign);
+            c.o(CHROMA_MAX * mag);
+          });
         };
 
         let raf = 0;
@@ -192,8 +286,19 @@ export function HeroMotion() {
         };
 
         gsap.set(scan, { opacity: 0 });
+        // The fringe's opacity is driven per-move (see CHROMA_MAX), so `show`
+        // deliberately does not touch it — a gate tween here would fight the
+        // per-move setter for the same property.
         const show = () => gsap.to(scan, { opacity: 1, duration: 0.4 });
-        const hide = () => gsap.to(scan, { opacity: 0, duration: 0.5 });
+        const hide = () => {
+          gsap.to(scan, { opacity: 0, duration: 0.5 });
+          if (chroma.length) gsap.to(chroma, { opacity: 0, duration: 0.4 });
+          // Settle the wordmark back to rest rather than freezing it wherever the
+          // pointer happened to exit.
+          if (layers.length) {
+            gsap.to(layers, { x: 0, duration: 0.7, ease: "power3.out" });
+          }
+        };
 
         section.addEventListener("pointerenter", measure);
         section.addEventListener("pointerenter", show);
