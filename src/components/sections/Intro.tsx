@@ -147,29 +147,50 @@ export function Intro() {
           The statement block and the button are the two staggered targets. */}
       <div data-reveal-group className="shell relative">
         <div data-reveal className="relative">
-          {/* Neon on/off. A tube light that has not quite settled: steady for
-              most of the 5.3s cycle, then a double-blink, a deeper dip and a
-              quick tick, none evenly spaced. Only ~5% of the loop is in motion,
-              so the paragraph is still while it is being read.
+          {/* A flickering light source, not a flickering element.
+              ═══════════════════════════════════════════════════════════════
+              THE PARAGRAPH ITSELF NEVER ANIMATES. An earlier version flickered
+              the <p>'s own opacity, and it read as the site glitching rather
+              than as a lamp: dimming the whole element takes the OBJECT away,
+              whereas a failing light only takes the LIGHT away. The object has
+              to stay put for the eye to attribute the change to a fixture.
 
-              The blinks SNAP — `linear` timing plus paired keyframe stops, so
-              each edge is ~3ms and the floor is genuinely held for 42–98ms. An
-              earlier ease-in-out version read as too subtle for exactly this
-              reason: easing turned each blink into a gentle swell that never
-              quite arrived. Perceived flicker strength is dominated by rate of
-              change, not by depth, which is why this got stronger without the
-              floor moving at all. Flash rate is 0.75/s against WCAG 2.3.1's
-              3/s threshold, so the seizure criterion is not in play.
+              So the glyphs are painted normally and permanently, and a twin span
+              stacked over them carries nothing but the glow — `text-transparent`
+              means its own glyphs never render, only their text-shadow. That
+              span's opacity is what flickers.
 
-              The floor is 0.82, not lower, and that is a contrast bound rather
-              than taste: opacity compositing is NOT linear in contrast — the text
-              blends toward the backdrop, so the ratio has to be recomputed on the
-              composited colour. Over this section's own texture, 0.72 measures
-              2.91:1, which fails even the 3:1 large-text threshold. 0.82 holds
-              4.12:1 on `bg` and 3.35:1 worst-case over the texture, and only for
-              ~130ms at the deepest point. Reduced motion pins it fully on. */}
-          <p className="text-statement font-accent text-fg-muted animate-hero-neon max-w-5xl uppercase xl:ml-7">
+              Three things fall out of the split, all of them wins:
+                · The glow can swing its FULL range, 0.85 -> 0 -> 1. A glow only
+                  ever ADDS luminance, so there is no contrast floor to respect.
+                  The old version was pinned at 0.82 by a measured 3:1 bound and
+                  could never be dramatic; this has no such ceiling.
+                · It is compositor-only. Animating `text-shadow` directly would
+                  re-rasterise a large blurred paragraph every frame; animating
+                  one layer's opacity is free (project rule C8).
+                · Reduced motion holds it lit instead of having to pick between a
+                  dimmed paragraph and no effect.
+
+              Rhythm: steady for ~95% of a 5.3s cycle, then a double-blink, a
+              deeper dip and a quick tick, unevenly spaced so it never reads as a
+              sine wave. Edges snap (`linear` + paired stops, ~3ms), dark runs
+              are held 42-98ms, and each one ends on a re-ignition spike to full
+              — arcs overshoot when struck, which is the detail that sells it.
+              0.75 flashes/sec, well under WCAG 2.3.1's 3/sec threshold.
+
+              The twin must wrap identically to the original or the glow
+              desynchronises from the glyphs: `inset-0` on a padding-free <p>
+              gives it the exact same width, and font, tracking and `uppercase`
+              are all inherited. Do not add padding to the <p> without moving
+              the span's box to match. */}
+          <p className="text-statement font-accent text-fg-muted relative max-w-5xl uppercase xl:ml-7">
             {intro.statement}
+            <span
+              aria-hidden="true"
+              className="animate-hero-neon text-shadow-glow-statement pointer-events-none absolute inset-0 text-transparent"
+            >
+              {intro.statement}
+            </span>
           </p>
 
           {/* Design x 1058–1341: right-8 lands the box at 1340 in the 1440 frame. */}
