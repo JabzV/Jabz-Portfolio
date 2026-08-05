@@ -194,34 +194,29 @@ export function HeroMotion() {
         const LAYER_TRAVEL = [7, 15, 24];
 
         /**
-         * Anaglyph fringe. The two tinted copies push in OPPOSITE directions, so
-         * the separation grows with distance from centre and collapses to zero at
-         * the middle — the eye reads opposed colour fringes as depth.
+         * Cover parallax. The photograph drifts a little against the pointer,
+         * which is enough to make the hero feel like a scene being looked into
+         * rather than a flat plate.
+         *
+         * The image carries `lg:scale-[1.04]` for exactly this: `object-cover`
+         * fills the plane precisely, so without that overscan any translation
+         * would drag an empty edge into view. 4% of a ~2545px plane is ~50px of
+         * slack, comfortably more than twice the travel below.
+         *
+         * Slower than the wordmark (0.8s vs 0.55s) so the backdrop reads as the
+         * furthest thing away — parallax depth is as much about lag as distance.
          */
-        const chromaR = section.querySelector<HTMLElement>('[data-hero-chroma="r"]');
-        const chromaC = section.querySelector<HTMLElement>('[data-hero-chroma="c"]');
-        const chroma = [chromaR, chromaC].filter(Boolean) as HTMLElement[];
-        const chromaTo = chroma.map((el, i) => ({
-          // Sign flip between the two copies is what makes it read as separation
-          // rather than as the whole image sliding.
-          sign: i === 0 ? 1 : -1,
-          x: gsap.quickTo(el, "x", { duration: 0.35, ease: "power2" }),
-          y: gsap.quickTo(el, "y", { duration: 0.35, ease: "power2" }),
-          o: gsap.quickTo(el, "opacity", { duration: 0.35, ease: "power2" }),
-        }));
-        /** Kept small on purpose: past ~8px it stops reading as depth and starts
-            reading as a broken image. */
-        const CHROMA_X = 8;
-        const CHROMA_Y = 4;
-        /**
-         * Opacity scales with distance from centre, not just the offset — and that
-         * is load-bearing, not polish. `screen` always ADDS luminance, so a fixed
-         * opacity means the darkest part of a night photograph gets washed out
-         * even at dead centre, where the two copies overlay exactly and there is
-         * no fringe to show for it. Tying opacity to the same magnitude as the
-         * offset means the cost only appears where the effect does.
-         */
-        const CHROMA_MAX = 0.3;
+        const cover = section.querySelector<HTMLElement>("[data-hero-cover]");
+        const coverTo = cover
+          ? {
+              x: gsap.quickTo(cover, "x", { duration: 0.8, ease: "power3" }),
+              y: gsap.quickTo(cover, "y", { duration: 0.8, ease: "power3" }),
+            }
+          : null;
+        /** Small on purpose. Past ~15px the crop visibly shifts and the careful
+            57%-helmet framing stops holding. */
+        const COVER_X = 14;
+        const COVER_Y = 8;
 
         // Cached OUTSIDE the pointer handler. Reading these per-move is textbook
         // layout thrash.
@@ -266,14 +261,17 @@ export function HeroMotion() {
             layerTo.forEach((set, i) => set(-wd * (LAYER_TRAVEL[i] ?? 7)));
           }
 
-          const cx = (fx - 0.5) * 2;
-          const cy = (fy - 0.5) * 2;
-          const mag = Math.min(1, Math.hypot(cx, cy));
-          chromaTo.forEach((c) => {
-            c.x(cx * CHROMA_X * c.sign);
-            c.y(cy * CHROMA_Y * c.sign);
-            c.o(CHROMA_MAX * mag);
-          });
+          // Counter-motion: the photograph moves opposite the pointer, the way a
+          // distant background does when you shift your head. Moving WITH the
+          // pointer would read as the image being dragged.
+          // Also gated on the entrance, which owns this element's transform until
+          // its `clearProps` runs.
+          if (entranceDone && coverTo) {
+            const cx = (fx - 0.5) * 2;
+            const cy = (fy - 0.5) * 2;
+            coverTo.x(-cx * COVER_X);
+            coverTo.y(-cy * COVER_Y);
+          }
         };
 
         let raf = 0;
@@ -286,18 +284,14 @@ export function HeroMotion() {
         };
 
         gsap.set(scan, { opacity: 0 });
-        // The fringe's opacity is driven per-move (see CHROMA_MAX), so `show`
-        // deliberately does not touch it — a gate tween here would fight the
-        // per-move setter for the same property.
         const show = () => gsap.to(scan, { opacity: 1, duration: 0.4 });
         const hide = () => {
           gsap.to(scan, { opacity: 0, duration: 0.5 });
-          if (chroma.length) gsap.to(chroma, { opacity: 0, duration: 0.4 });
-          // Settle the wordmark back to rest rather than freezing it wherever the
-          // pointer happened to exit.
+          // Settle back to rest rather than freezing wherever the pointer exited.
           if (layers.length) {
             gsap.to(layers, { x: 0, duration: 0.7, ease: "power3.out" });
           }
+          if (cover) gsap.to(cover, { x: 0, y: 0, duration: 0.9, ease: "power3.out" });
         };
 
         section.addEventListener("pointerenter", measure);

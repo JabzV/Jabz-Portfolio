@@ -3,7 +3,6 @@ import Link from "next/link";
 
 import { HeroMotion } from "@/components/motion/HeroMotion";
 import { BioCard } from "@/components/sections/hero/BioCard";
-import { HeroChromatic } from "@/components/sections/hero/HeroChromatic";
 import { HeroEdgeLight } from "@/components/sections/hero/HeroEdgeLight";
 import { HeroGlow } from "@/components/sections/hero/HeroGlow";
 import { KatakanaColumn } from "@/components/sections/hero/KatakanaColumn";
@@ -105,13 +104,9 @@ export function Hero() {
             fill
             priority
             unoptimized
-            className="object-cover object-top lg:translate-x-[10.5%]"
+            className="object-cover object-top lg:translate-x-[10.5%] lg:scale-[1.04]"
           />
         </div>
-        {/* Anaglyph fringe. Directly after the cover and BEFORE the wordmark, so
-            the colour separation reads as belonging to the photograph rather than
-            tinting the type on top of it. */}
-        <HeroChromatic />
         <LayeredWordmark />
         {/* After the wordmark so the pointer scan light passes OVER it, and a
             SIBLING of [data-hero-cover] rather than a child: mix-blend-mode only
