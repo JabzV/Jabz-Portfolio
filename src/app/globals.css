@@ -279,7 +279,13 @@
   /* Intro statement. 8.6s is both well over the 6s reading-copy minimum and
      non-harmonic with every period above, so it never falls into step with the
      hero glows during the scroll overlap between the two sections. */
-  --animate-hero-neon: hero-neon-flicker 8.6s ease-in-out infinite;
+  --animate-hero-neon: hero-neon-flicker 5.3s linear infinite;
+  /* `linear`, not ease-in-out: easing turned every blink into a gentle swell
+     that barely reached its extreme, which is why the effect read as too
+     subtle. With linear timing and paired keyframe stops, the edges are
+     instantaneous and the floor is actually held. 5.3s stays non-harmonic
+     with 5.7 / 4.2 / 7.3 / 9 / 9.4 / 11.1 so it never beats with the hero
+     glows. Flash rate 0.75/s, far below the WCAG 2.3.1 threshold of 3/s. */
 
   /* NOTE THE USAGE — these two are not symmetrical, because Tailwind v4 has an
      --ease-* namespace but NO --duration-* namespace:
@@ -849,28 +855,39 @@ html[data-custom-cursor] * {
    motion is ~9% of the cycle, so the text is steady while actually being read,
    and each dip lasts ~130ms. */
 @keyframes hero-neon-flicker {
+  /* ON. Long calm stretches — the text is steady for ~95% of the cycle. */
   0%,
-  12%,
-  14%,
-  41%,
-  44%,
-  67%,
-  69.5%,
-  72.5%,
+  22%,
+  23.6%,
+  24.8%,
+  25.9%,
+  54%,
+  55.95%,
+  79%,
+  79.9%,
   100% {
     opacity: 1;
   }
-  13% {
-    opacity: 0.94;
-  }
-  42.5% {
-    opacity: 0.9;
-  }
-  68% {
+
+  /* OFF. Each blink is a PAIR of stops so the value is held at the floor for a
+     real duration instead of being touched for one frame, and the 0.05% gap to
+     the neighbouring ON stop makes the edges a snap (~2.6ms) rather than a ramp.
+     That shape is the whole point: a tube light snaps, and perceived flicker
+     strength comes from rate of change far more than from depth.
+       22.05-23.55  ->  80ms   double-blink, first
+       24.85-25.85  ->  53ms   double-blink, second
+       54.05-55.90  ->  98ms   the deep one
+       79.05-79.85  ->  42ms   quick tick
+     Total ~273ms of 5.3s = 5.2% in motion. */
+  22.05%,
+  23.55%,
+  24.85%,
+  25.85%,
+  54.05%,
+  55.9%,
+  79.05%,
+  79.85% {
     opacity: 0.82;
-  }
-  71% {
-    opacity: 0.84;
   }
 }
 

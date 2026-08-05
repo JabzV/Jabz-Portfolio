@@ -148,9 +148,18 @@ export function Intro() {
       <div data-reveal-group className="shell relative">
         <div data-reveal className="relative">
           {/* Neon on/off. A tube light that has not quite settled: steady for
-              most of the 8.6s cycle, with a shallow tick, a medium dip and a
-              double-blink, none evenly spaced. Only ~9% of the loop is in motion,
+              most of the 5.3s cycle, then a double-blink, a deeper dip and a
+              quick tick, none evenly spaced. Only ~5% of the loop is in motion,
               so the paragraph is still while it is being read.
+
+              The blinks SNAP — `linear` timing plus paired keyframe stops, so
+              each edge is ~3ms and the floor is genuinely held for 42–98ms. An
+              earlier ease-in-out version read as too subtle for exactly this
+              reason: easing turned each blink into a gentle swell that never
+              quite arrived. Perceived flicker strength is dominated by rate of
+              change, not by depth, which is why this got stronger without the
+              floor moving at all. Flash rate is 0.75/s against WCAG 2.3.1's
+              3/s threshold, so the seizure criterion is not in play.
 
               The floor is 0.82, not lower, and that is a contrast bound rather
               than taste: opacity compositing is NOT linear in contrast — the text
