@@ -22,8 +22,8 @@ import { intro } from "@/data/site";
  * contributes the 180px gap below as its own top padding.
  */
 
-const SCANLINE_SRC = "/assets/texture-scanline.png";
-/** Intrinsic size of texture-scanline.png — needed for the aspect ratio only. */
+const SCANLINE_SRC = "/assets/texture-scanline.webp";
+/** Intrinsic size of the scanline source — needed for the aspect ratio only. */
 const SCANLINE_W = 1920;
 const SCANLINE_H = 1080;
 
@@ -58,6 +58,11 @@ function ScanlineCrop({
         alt=""
         width={SCANLINE_W}
         height={SCANLINE_H}
+        // `unoptimized`: the page zoom makes the browser resolve `sizes` against
+        // the UNZOOMED layout, so the optimizer served variants well below the
+        // rendered size and upscaled them. Serving the source verbatim is the
+        // only reliable way to keep these crisp — same fix as the hero cover.
+        unoptimized
         className="absolute max-w-none"
         style={inner}
       />
@@ -65,15 +70,34 @@ function ScanlineCrop({
   );
 }
 
+/**
+ * Both crop windows are scaled to 0.78 of their Figma size, and that is a
+ * SHARPNESS decision rather than a layout one.
+ *
+ * The inner percentages blow the source up beyond its own resolution, so the
+ * windows were showing upscaled pixels. Measured at a 2545px viewport:
+ *   strip  1920 source -> 1920 CSS  = 1.00x, then x1.59 page zoom = 1.59x
+ *   badge  1920 source -> 2459 CSS  = 1.28x, then x1.59 page zoom = 2.03x
+ *
+ * Shrinking the window shrinks the inner image with it (the percentages are
+ * relative to the box), so the SAME source region is shown at higher pixel
+ * density. At 0.78 the badge lands at exactly 1:1 in CSS px — 221 x 8.6878 =
+ * 1920 — and the strip goes below 1:1, where the browser downsamples and it
+ * reads sharper still.
+ *
+ * Do not restore the Figma sizes without also supplying a higher-resolution
+ * source; the geometry was never the problem, the pixel budget was.
+ */
+
 /** Figma 27:4421 — hatched progress strip, caption baked into the source. */
 const PROGRESS_STRIP = {
-  box: { width: "567px", height: "84px" },
+  box: { width: "442px", height: "66px" },
   inner: { width: "338.62%", height: "1285.71%", left: "-17.46%", top: "-1007.14%" },
 } as const;
 
 /** Figma 30:4986 — small crop beside the statement's first line. */
 const STATEMENT_CROP = {
-  box: { width: "283px", height: "119px" },
+  box: { width: "221px", height: "93px" },
   inner: { width: "868.78%", height: "1161.29%", left: "-675.57%", top: "-726.88%" },
 } as const;
 
@@ -86,12 +110,17 @@ export function Intro() {
     >
       {/* Decorative. `fill` + sizes: rendered at opacity-10, never worth a 4K variant. */}
       <Image
-        src="/assets/intro/cityscape-bg.jpg"
+        src="/assets/intro/cityscape-bg.webp"
         alt=""
         aria-hidden="true"
         fill
-        sizes="100vw"
-        quality={40}
+        // `unoptimized` rather than sizes+quality. Measured: the optimizer was
+        // serving a 490px-wide variant of a 736px source and stretching it to
+        // 2542px — a 5.19x upscale, the blurriest thing in the section. The page
+        // `zoom` is why: the browser resolves `sizes` against the UNZOOMED layout
+        // and picks far too small. Serving the source verbatim caps the upscale
+        // at 3.45x. Re-encoded jpg -> webp so this costs 88KB, not 163KB.
+        unoptimized
         // 0.10 -> 0.06: lifts fg-muted over this texture from a 4.24:1
         // worst-case pixel to ~4.78:1, clearing 4.5:1 at every width. Matches
         // the contact texture. An intentional deviation from the Figma.
@@ -118,7 +147,19 @@ export function Intro() {
           The statement block and the button are the two staggered targets. */}
       <div data-reveal-group className="shell relative">
         <div data-reveal className="relative">
-          <p className="text-statement font-accent text-fg-muted max-w-5xl uppercase xl:ml-7">
+          {/* Neon on/off. A tube light that has not quite settled: steady for
+              most of the 8.6s cycle, with a shallow tick, a medium dip and a
+              double-blink, none evenly spaced. Only ~9% of the loop is in motion,
+              so the paragraph is still while it is being read.
+
+              The floor is 0.82, not lower, and that is a contrast bound rather
+              than taste: opacity compositing is NOT linear in contrast — the text
+              blends toward the backdrop, so the ratio has to be recomputed on the
+              composited colour. Over this section's own texture, 0.72 measures
+              2.91:1, which fails even the 3:1 large-text threshold. 0.82 holds
+              4.12:1 on `bg` and 3.35:1 worst-case over the texture, and only for
+              ~130ms at the deepest point. Reduced motion pins it fully on. */}
+          <p className="text-statement font-accent text-fg-muted animate-hero-neon max-w-5xl uppercase xl:ml-7">
             {intro.statement}
           </p>
 
