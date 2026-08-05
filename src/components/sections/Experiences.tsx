@@ -90,10 +90,16 @@ export function Experiences() {
 /** A filled card: oxblood fill, hairline border, marker top-right, text bottom-left. */
 function ExperienceCard({ experience }: { experience: Experience }) {
   return (
-    <article className="bg-surface-filled border-border-card flex min-h-56 flex-col border px-5 py-6 md:-ml-px md:min-h-72 md:px-6 md:py-9">
+    // `group` for hover. Deliberately NO lift/translate here, unlike the other
+    // hover treatments: these cards share collapsed borders with their neighbours
+    // (`md:-ml-px` here, `-mt-px` on the rows), so translating one would tear its
+    // border away from the card beside it. The response is colour and glow only,
+    // which the collapsed construction tolerates. Like services, a card is not a
+    // link and carries no `data-cursor`, so the cursor stays `default`.
+    <article className="group bg-surface-filled border-border-card hover:border-accent-soft flex min-h-56 flex-col border px-5 py-6 transition-colors duration-300 md:-ml-px md:min-h-72 md:px-6 md:py-9">
       <div className="flex items-start justify-between gap-4">
         <LogoSlot />
-        <p className="text-meta font-display text-fg">{`[ ${experience.marker} ]`}</p>
+        <p className="text-meta font-display text-fg group-hover:text-shadow-glow-link transition-[text-shadow] duration-(--duration-hover)">{`[ ${experience.marker} ]`}</p>
       </div>
 
       <div className="mt-16 md:mt-auto">

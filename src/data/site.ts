@@ -46,10 +46,19 @@ export const heroCopy = {
   resume: { label: ">  DOWNLOAD MY RESUME", href: null as string | null },
   // Points at the /light route, which currently holds a work-in-progress
   // placeholder. Light mode is a separate design, not a recolour.
-  lightModeLink: { label: "View it in light mode\n(Professional Mode)", href: "/light" },
+  lightModeLink: {
+    label: "View it in light mode\n(Professional Mode)",
+    href: "/light",
+  },
   quotes: [
-    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
-    { text: "Quality means doing it right when no one is looking.", author: "Henry Ford" },
+    {
+      text: "The only way to do great work is to love what you do.",
+      author: "Steve Jobs",
+    },
+    {
+      text: "Quality means doing it right when no one is looking.",
+      author: "Henry Ford",
+    },
   ],
 } as const;
 
@@ -69,7 +78,8 @@ export const intro = {
 
 export const featuredWork = {
   title: "Featured Work",
-  subtitle: "View some of my projects. Combining elegant design with structured architecture",
+  subtitle:
+    "View some of my projects. Combining elegant design with structured architecture",
   cta: { label: "View Portfolio", href: null as string | null },
 } as const;
 
@@ -82,16 +92,31 @@ export const experiencesCopy = {
 export const servicesCopy = { title: "Services" } as const;
 
 export const social: { label: string; href: string | null; icon: string }[] = [
-  { label: "Linkedin", href: null, icon: "/assets/hero/social-linkedin.svg" },
-  { label: "instagram", href: null, icon: "/assets/hero/social-instagram.svg" },
+  {
+    label: "Linkedin",
+    href: "https://www.linkedin.com/in/vestidas-jabez-953a572bb/",
+    icon: "/assets/hero/social-linkedin.svg",
+  },
+  {
+    label: "instagram",
+    href: "https://www.instagram.com/jabz.vest/",
+    icon: "/assets/hero/social-instagram.svg",
+  },
 ];
 
 export const contact = {
   title: ["Let's work", "Together"],
   tagline: "Let's create a unique experience together!",
-  cta: { label: "Contact me directly", href: "mailto:vestidas.jabezjoshua@gmail.com" },
+  cta: {
+    label: "Contact me directly",
+    href: "mailto:vestidas.jabezjoshua@gmail.com",
+  },
   rows: [
-    { label: "Email", value: "vestidas.jabezjoshua@gmail.com", href: "mailto:vestidas.jabezjoshua@gmail.com" },
+    {
+      label: "Email",
+      value: "vestidas.jabezjoshua@gmail.com",
+      href: "mailto:vestidas.jabezjoshua@gmail.com",
+    },
     { label: "Contact", value: "+639552591223", href: "tel:+639552591223" },
     { label: "Alt Contact", value: "+639917123144", href: "tel:+639917123144" },
   ],

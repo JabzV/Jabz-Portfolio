@@ -269,7 +269,12 @@ export function Hero() {
           row below `lg`, where a 100px-wide column would look stranded. */}
       <div data-hero-float className="flex flex-row justify-center gap-8 lg:absolute lg:top-[281px] lg:right-[18px] lg:z-20 lg:flex-col lg:gap-5">
         {social.map((item) => (
-          <SocialBlock key={item.label} label={item.label} icon={item.icon} />
+          <SocialBlock
+            key={item.label}
+            label={item.label}
+            icon={item.icon}
+            href={item.href}
+          />
         ))}
       </div>
 
