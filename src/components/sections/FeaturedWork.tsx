@@ -6,8 +6,9 @@ import { ProjectRow } from "./featured-work/ProjectRow";
 /**
  * Featured Work — Figma y 1842–3291.
  *
- * A top rule, centred 112px title, subtitle, "View Portfolio" button, then four
- * project rows separated by rules. See docs/design/04-featured-work.md.
+ * A top rule, right-aligned 112px title, start-aligned tab-indented subtitle,
+ * "More Work" button, then four project rows separated by rules. See
+ * docs/design/04-featured-work.md.
  *
  * Rules are `border-t border-rule`, never the shipped 1334×1 SVG, and they span
  * the content column rather than a fixed width (RESPONSIVE.md).
@@ -31,11 +32,14 @@ export function FeaturedWork() {
         <h2
           id="work-title"
           data-reveal
-          className="text-section-title font-display text-fg mt-16 text-center uppercase"
+          className="text-section-title font-display text-fg mt-16 text-right uppercase"
         >
           {featuredWork.title}
         </h2>
-        <p data-reveal className="text-card-title font-accent text-fg-muted mt-8 uppercase">
+        <p
+          data-reveal
+          className="text-card-title font-accent text-fg-muted indent-8 mt-8 text-left uppercase"
+        >
           {featuredWork.subtitle}
         </p>
         <div data-reveal className="mt-4">

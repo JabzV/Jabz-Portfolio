@@ -80,7 +80,7 @@ export const featuredWork = {
   title: "Featured Work",
   subtitle:
     "View some of my projects. Combining elegant design with structured architecture",
-  cta: { label: "View Portfolio", href: null as string | null },
+  cta: { label: "More Work", href: null as string | null },
 } as const;
 
 export const experiencesCopy = {

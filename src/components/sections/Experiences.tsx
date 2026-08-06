@@ -29,7 +29,7 @@ export function Experiences() {
       <div className="md:grid md:grid-cols-12">
         {/* Header column. Sits ~82px below the grid top in the design. */}
         {/* Phase 4 reveal hooks: attributes only, no structure change. */}
-        <header data-reveal-group className="md:col-span-5 md:pt-20">
+        <header data-reveal-group className="md:sticky md:top-16 md:col-span-5 md:h-fit md:self-start md:pt-20">
           <h2
             data-reveal
             id="experiences-title"
