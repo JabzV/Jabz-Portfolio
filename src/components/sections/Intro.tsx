@@ -71,33 +71,52 @@ function ScanlineCrop({
 }
 
 /**
- * Both crop windows are scaled to 0.78 of their Figma size, and that is a
+ * Both crop windows are drawn at a fraction of their Figma size, and that is a
  * SHARPNESS decision rather than a layout one.
  *
- * The inner percentages blow the source up beyond its own resolution, so the
- * windows were showing upscaled pixels. Measured at a 2545px viewport:
- *   strip  1920 source -> 1920 CSS  = 1.00x, then x1.59 page zoom = 1.59x
- *   badge  1920 source -> 2459 CSS  = 1.28x, then x1.59 page zoom = 2.03x
+ * The inner percentages blow `texture-scanline` up well beyond its own
+ * resolution, so these windows were showing upscaled pixels. Shrinking the
+ * window shrinks the inner image with it — the percentages are relative to the
+ * box — so the SAME source region is shown at higher pixel density. The crop is
+ * unaffected, because every offset is a percentage too.
  *
- * Shrinking the window shrinks the inner image with it (the percentages are
- * relative to the box), so the SAME source region is shown at higher pixel
- * density. At 0.78 the badge lands at exactly 1:1 in CSS px — 221 x 8.6878 =
- * 1920 — and the strip goes below 1:1, where the browser downsamples and it
- * reads sharper still.
+ * Effective density at a 2545px viewport, where the page `zoom` is x1.59
+ * (the zoom multiplies through, so it is the figure that actually matters):
+ *
+ *            1.00 (Figma)     0.78          0.62  <- now
+ *   strip      x2.04          x1.59         x0.99
+ *   badge      x2.60          x2.03         x1.26
+ *
+ * At 0.62 the strip lands essentially 1:1 against its 1920px source and the
+ * badge is close behind — both a long way from the 2.6x smear the Figma sizes
+ * produced. Below ~0.55 the strip starts to read as a thin line rather than a
+ * hatched panel, so this is near the useful floor.
  *
  * Do not restore the Figma sizes without also supplying a higher-resolution
  * source; the geometry was never the problem, the pixel budget was.
  */
+const CROP_SCALE = 0.62;
+
+/**
+ * Sizes are DERIVED from the Figma dimensions rather than written out, so the
+ * two axes can never drift apart. Rounding them independently once put a 0.4%
+ * error into the aspect ratio, which skews the hatching — the inner image is
+ * positioned in percentages, so a non-uniform box scale shears the crop.
+ */
+const scaleBox = (w: number, h: number) => ({
+  width: `${(w * CROP_SCALE).toFixed(2)}px`,
+  height: `${(h * CROP_SCALE).toFixed(2)}px`,
+});
 
 /** Figma 27:4421 — hatched progress strip, caption baked into the source. */
 const PROGRESS_STRIP = {
-  box: { width: "442px", height: "66px" },
+  box: scaleBox(567, 85),
   inner: { width: "338.62%", height: "1285.71%", left: "-17.46%", top: "-1007.14%" },
 } as const;
 
 /** Figma 30:4986 — small crop beside the statement's first line. */
 const STATEMENT_CROP = {
-  box: { width: "221px", height: "93px" },
+  box: scaleBox(283, 119),
   inner: { width: "868.78%", height: "1161.29%", left: "-675.57%", top: "-726.88%" },
 } as const;
 
@@ -106,26 +125,73 @@ export function Intro() {
     <section
       id="about"
       aria-label="Introduction"
-      className="relative overflow-hidden pt-20 md:pt-40 xl:pt-68"
+      // `overflow-x-clip`, not `overflow-hidden`: the cityscape below is
+      // deliberately taller than this section and must be free to spill past the
+      // bottom edge. `overflow-x: clip` still contains the progress strip's
+      // horizontal overhang (so no h-scrollbar) while leaving the Y axis
+      // visible — `overflow-x: hidden` could not, since hidden on one axis
+      // forces the other to `auto`. Same utility FeaturedWork already uses.
+      className="relative overflow-x-clip pt-20 md:pt-40 xl:pt-68"
     >
-      {/* Decorative. `fill` + sizes: rendered at opacity-10, never worth a 4K variant. */}
-      <Image
-        src="/assets/intro/cityscape-bg.webp"
-        alt=""
+      {/*
+        The cityscape runs PAST the section's bottom edge, continuing behind the
+        gap under "MORE ABOUT ME" and fading out just short of FeaturedWork's
+        top rule. Ending it flush with the button cut the skyline off on a hard
+        horizontal line exactly where the eye was already travelling.
+
+        Done with an oversized wrapper rather than padding on the <section>,
+        because the inter-section gap is FeaturedWork's `pt` by project
+        convention and this must not disturb it: the extension is pure paint,
+        and no content moves.
+
+        The negative bottoms stay just inside each of FeaturedWork's top-padding
+        steps (80/112/144/180px), leaving ~24-40px of clean space so the texture
+        never crowds or touches the rule:
+            base -56 of 80 · sm -80 of 112 · lg -108 of 144 · xl -140 of 180
+
+        The mask fades the last 64px to nothing. Moving the cut lower was not
+        enough on its own — a hard horizontal edge across the full width is what
+        made the old version read as clipped, and simply relocating it 140px down
+        would have reproduced the same artefact in a new place. Fading means
+        there is no edge to notice, so the skyline recedes into the dark instead
+        of being sliced.
+
+        64px is deliberately much SHORTER than the 140px overhang, and that ratio
+        matters. A first attempt used 180px, which is longer than the overhang,
+        so the fade started inside the section and — against a texture already at
+        6% opacity — erased everything below the button. It looked like the image
+        had been shortened rather than extended, i.e. the exact opposite of the
+        intent. Keep the fade under half the overhang: the extension has to be
+        visible for most of its length to be worth having.
+
+        `-z-10` is load-bearing. Absolutely-positioned elements otherwise paint
+        above later STATIC content, so the overhang would cover FeaturedWork's
+        border-t. Negative z drops it beneath all in-flow content while staying
+        above the canvas background — verified: no wrapper in page.tsx or
+        layout.tsx paints a background that would occlude it.
+      */}
+      <div
         aria-hidden="true"
-        fill
-        // `unoptimized` rather than sizes+quality. Measured: the optimizer was
-        // serving a 490px-wide variant of a 736px source and stretching it to
-        // 2542px — a 5.19x upscale, the blurriest thing in the section. The page
-        // `zoom` is why: the browser resolves `sizes` against the UNZOOMED layout
-        // and picks far too small. Serving the source verbatim caps the upscale
-        // at 3.45x. Re-encoded jpg -> webp so this costs 88KB, not 163KB.
-        unoptimized
-        // 0.10 -> 0.06: lifts fg-muted over this texture from a 4.24:1
-        // worst-case pixel to ~4.78:1, clearing 4.5:1 at every width. Matches
-        // the contact texture. An intentional deviation from the Figma.
-        className="pointer-events-none object-cover opacity-[0.06]"
-      />
+        className="pointer-events-none absolute inset-x-0 top-0 -z-10 -bottom-14 [mask-image:linear-gradient(to_bottom,#000_calc(100%-64px),transparent)] sm:-bottom-20 lg:-bottom-27 xl:-bottom-35"
+      >
+        {/* Decorative. Rendered at opacity-6, never worth a 4K variant. */}
+        <Image
+          src="/assets/intro/cityscape-bg.webp"
+          alt=""
+          fill
+          // `unoptimized` rather than sizes+quality. Measured: the optimizer was
+          // serving a 490px-wide variant of a 736px source and stretching it to
+          // 2542px — a 5.19x upscale, the blurriest thing in the section. The page
+          // `zoom` is why: the browser resolves `sizes` against the UNZOOMED layout
+          // and picks far too small. Serving the source verbatim caps the upscale
+          // at 3.45x. Re-encoded jpg -> webp so this costs 88KB, not 163KB.
+          unoptimized
+          // 0.10 -> 0.06: lifts fg-muted over this texture from a 4.24:1
+          // worst-case pixel to ~4.78:1, clearing 4.5:1 at every width. Matches
+          // the contact texture. An intentional deviation from the Figma.
+          className="object-cover opacity-[0.06]"
+        />
+      </div>
 
       {/*
         Progress strip: design x 855–1422, y 956–1040 — 12px below the section's
